@@ -9,15 +9,19 @@ const Investees = mongoose.model('Investee')
 // --------------------
 export async function getInvestees (req, reply) {
   try {
-    const { type } = req.query
+    const { page, type, limit } = req.query
 
     const filter = {}
+    const skip = (limit * page) - limit
 
     if (type) filter.type = type
 
-    const investees = await Investees.find(filter).lean()
+    const [docs, docCount] = await Promise.all([
+      Investees.find(filter).skip(skip).limit(limit).lean(),
+      Investees.countDocuments(filter),
+    ])
 
-    return investees
+    return { docs, docCount }
   } catch (err) {
     console.error(' !! Could not fetch investees', err)
     reply.internalServerError(err)
@@ -42,8 +46,6 @@ export async function createInvestee (req, reply) {
 
     const folder = 'carteracm/investees'
     const uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
-
-    // await deleteImage(uploadImageResult.public_id)
 
     const investee = new Investees({
       name,
