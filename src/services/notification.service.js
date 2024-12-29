@@ -14,13 +14,13 @@ export async function sendRequestResetPasswordEmail (userData, token, baseUrl) {
 
     const emailData = {
       name: userData.givenName,
+      familyName: userData.familyName,
       email: userData.email,
       locale,
-      subject: 'Subject',
-      greeting: 'Greeting',
-      body: 'body',
+      subject: 'Restablecer contraseña',
+      body: 'Para poder restablecer tu contraseña, haz clic en el siguiente enlace:',
       ctaLink: `${baseUrl}/newpassword?email=${userData.email}&key=${tokenPayload}&lang=${locale}`,
-      ctaText: 'cta text',
+      ctaText: 'Restablecer contraseña',
     }
 
     await sendNotificationEmail(emailData)

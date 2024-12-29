@@ -23,7 +23,7 @@ const newPassword = customAlphabet(allChars, 12)
 
 export async function sendNotificationEmail (emailData, options = { isNoReply: false, template: 'default' }) {
   // If this is a test email, don't send it.
-  const dummyDomains = ['test.com', 'test.es', 'test.fr', 'prueba.es', 'prueba.com']
+  const dummyDomains = ['test.com', 'prueba.com']
   if (dummyDomains.includes(emailData.email.split('@')[1])) {
     return null
   }

@@ -130,13 +130,17 @@ export async function requestResetPassword (req, reply) {
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
 
+    const payload = {
+      sub: user._id,
+    }
+
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: '6 hours' })
 
     const userMeta = await UsersMetadata.findOneAndUpdate({ _id: user._id }, { $set: { verificationToken: token } }, { new: true })
 
     // Only send email if userMeta was found.
     if (userMeta) {
-      await sendRequestResetPasswordEmail(user.toObject(), token, origin)
+      await sendRequestResetPasswordEmail(user, token, origin)
     }
   } catch (err) {
     console.error(` !! Unauthorized password reset request for: ${email}`, err)
@@ -157,7 +161,7 @@ export async function resetPassword (req, reply) {
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
 
-    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken').lean()
+    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken')
     if (!userMeta) return reply.unauthorized('User not found.')
 
     const verificationToken = userMeta.verificationToken
