@@ -70,6 +70,39 @@ export async function createInvestee (req, reply) {
 }
 
 // --------------------
+export async function updateInvestee(req, reply) {
+  const { investeeId } = req.params
+
+  const file = await req.file()
+  let investeeFile = null
+
+  if (file) {
+    investeeFile = file.fields.investeeFile
+  }
+
+  const {  name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description = {} } = req.body
+
+  const newData = {
+    name,
+    type,
+    investedAt,
+    disinvestedAt,
+    websiteUrl,
+    headquarters,
+    description,
+  }
+
+  try {
+    const investee = await Investees.findOneAndUpdate({ _id: investeeId, $set: newData }, { new: true })
+    if (!investee) return reply.notFound('Investee not found.')
+
+  } catch (err) {
+    console.error(` !! Could not update investe: ${investeeId}`, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
 export async function deleteInvestee (req, reply) {
   try {
     const { investeeId } = req.params

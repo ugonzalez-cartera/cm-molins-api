@@ -1,4 +1,4 @@
-import { createInvestee, deleteInvestee, getInvestees } from './investees.handlers.js'
+import { createInvestee, deleteInvestee, getInvestees, updateInvestee } from './investees.handlers.js'
 
 import { configAllowance } from '../../services/authorization.service.js'
 import config from '../../config.js'
@@ -9,6 +9,7 @@ async function routes (fastify, opts) {
 
   fastify.get('/', { ...opts }, getInvestees)
   fastify.post('/', { ...opts }, createInvestee)
+  fastify.put('/:investeeId', { ...opts }, updateInvestee)
   fastify.delete('/:investeeId', { ...opts }, deleteInvestee)
 }
 
