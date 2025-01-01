@@ -73,11 +73,18 @@ export async function createInvestee (req, reply) {
 export async function updateInvestee(req, reply) {
   const { investeeId } = req.params
 
-  const file = await req.file()
-  let investeeFile = null
+  let uploadImageResult = null
+  if (req.isMultipart()) {
+    const file = await req?.file()
 
-  if (file) {
-    investeeFile = file.fields.investeeFile
+    if (file) {
+      const investeeFile = file.fields.investeeFile
+
+      const buffer = await file.fields.investeeFile.toBuffer()
+
+      const folder = 'carteracm/investees'
+      uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
+    }
   }
 
   const {  name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description = {} } = req.body
@@ -92,8 +99,13 @@ export async function updateInvestee(req, reply) {
     description,
   }
 
+  if (uploadImageResult) {
+    newData.logoUrl = uploadImageResult.secure_url
+    newData.publicId = uploadImageResult.public_id
+  }
+
   try {
-    const investee = await Investees.findOneAndUpdate({ _id: investeeId, $set: newData }, { new: true })
+    const investee = await Investees.findOneAndUpdate({ _id: investeeId}, { $set: newData  }, { new: true })
     if (!investee) return reply.notFound('Investee not found.')
 
   } catch (err) {
