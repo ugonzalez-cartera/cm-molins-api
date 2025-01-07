@@ -50,6 +50,34 @@ export async function createSysUser (req, reply) {
   return user
 }
 
+// --------------------
+export async function getSysUsers (req, reply) {
+  const { status, limit, page } = req.query
+
+  const filter = {}
+  const skip = (limit * page) - limit
+
+  if (status) {
+    filter.status = status
+  }
+
+  try {
+    const [docs, docCount] = await Promise.all([
+      SysUsers.find(filter).skip(skip).limit(limit).lean(),
+      SysUsers.countDocuments(filter),
+    ])
+
+    if (docs.length  === 0) return reply.notFound('No users found.')
+
+    return {
+      docs,
+      docCount,
+     }
+  } catch (err) {
+    console.error(' !! Could not get sysUsers', err)
+    reply.internalServerError(err)
+  }
+}
 
 // --------------------
 export async function getSysUser (req, reply) {

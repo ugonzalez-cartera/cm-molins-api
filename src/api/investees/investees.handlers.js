@@ -14,7 +14,9 @@ export async function getInvestees (req, reply) {
     const filter = {}
     const skip = (limit * page) - limit
 
-    if (type) filter.type = type
+    if (type) {
+      filter.type = { $in: type.split(',') }
+    }
 
     const [docs, docCount] = await Promise.all([
       Investees.find(filter).skip(skip).limit(limit).lean(),
@@ -73,40 +75,44 @@ export async function createInvestee (req, reply) {
 export async function updateInvestee(req, reply) {
   const { investeeId } = req.params
 
-  let uploadImageResult = null
-  if (req.isMultipart()) {
-    const file = await req?.file()
-
-    if (file) {
-      const investeeFile = file.fields.investeeFile
-
-      const buffer = await file.fields.investeeFile.toBuffer()
-
-      const folder = 'carteracm/investees'
-      uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
-    }
-  }
-
-  const {  name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description = {} } = req.body
-
-  const newData = {
-    name,
-    type,
-    investedAt,
-    disinvestedAt,
-    websiteUrl,
-    headquarters,
-    description,
-  }
-
-  if (uploadImageResult) {
-    newData.logoUrl = uploadImageResult.secure_url
-    newData.publicId = uploadImageResult.public_id
-  }
+  const {  name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description } = req.body || {}
 
   try {
-    const investee = await Investees.findOneAndUpdate({ _id: investeeId}, { $set: newData  }, { new: true })
+    const investee = await Investees.findOne({ _id: investeeId })
     if (!investee) return reply.notFound('Investee not found.')
+
+    let uploadImageResult = null
+    if (req.isMultipart()) {
+      const file = await req?.file()
+
+      if (file) {
+        const investeeFile = file.fields.investeeFile
+
+        const buffer = await file.fields.investeeFile.toBuffer()
+
+        const folder = 'carteracm/investees'
+        uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
+      }
+
+      if (uploadImageResult) {
+        investee.logoUrl = uploadImageResult.secure_url
+        investee.publicId = uploadImageResult.public_id
+      }
+
+      await investee.save()
+    } else {
+      investee.name = name
+      investee.type = type
+      investee.investedAt = investedAt
+      investee.disinvestedAt = disinvestedAt
+      investee.websiteUrl = websiteUrl
+      investee.headquarters = headquarters
+      investee.description = description
+
+      await investee.save()
+    }
+
+    return investee
 
   } catch (err) {
     console.error(` !! Could not update investe: ${investeeId}`, err)
