@@ -75,7 +75,7 @@ export async function getCounselors (req, reply) {
 
   try {
     const [docs, docCount] = await Promise.all([
-      Counselors.find(filter).skip(skip).limit(limit).lean(),
+      Counselors.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
       Counselors.countDocuments(filter),
     ])
 

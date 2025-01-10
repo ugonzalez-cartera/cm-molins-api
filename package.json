@@ -7,7 +7,7 @@
   "scripts": {
     "test": "npm run test",
     "start": "node index.js",
-    "dev": "nodemon index.js | pino-colada"
+    "dev": "node --env-file=.env --watch index.js | pino-colada"
   },
   "author": "Unai Gonzále Escalante",
   "license": "ISC",
