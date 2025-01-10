@@ -39,14 +39,14 @@ export async function getToken (req, reply) {
     const passwordMatch = await bcrypt.compare(password, userMeta.password)
     if (!passwordMatch) return reply.unauthorized('Invalid password.')
 
-    const payload = {
-      sub: user._id,
-      role: user.role,
-    }
+      const payload = {
+        sub: user._id,
+        role: user.role,
+      }
 
-    const refreshTokenPayload = {
-      sub: user._id,
-    }
+      const refreshTokenPayload = {
+        sub: user._id,
+      }
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
     const refreshToken = jwt.sign(refreshTokenPayload, process.env.API_SECRET, { expiresIn: config.tokens.refreshTokenExpiration })
@@ -78,9 +78,9 @@ export async function refreshToken (req, reply) {
 
     let user = await Counselors.findOne({ _id: sub }).lean()
     if (user) {
-      user.role = 'counselor'
+      user.role = ['counselor']
     } else {
-      user = await SysUsers.findOne({ _id: sub }).select('+roles').lean()
+      user = await SysUsers.findOne({ _id: sub }).select('+role').lean()
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')

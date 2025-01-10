@@ -30,7 +30,10 @@ export async function sendRequestResetPasswordEmail (userData, token, baseUrl) {
 }
 
 
-export async function sendCreateUserEmail (userData) {
+export async function sendCreateUserEmail ({ userData, emailData, token, baseUrl }) {
+  // Only send the central part of the token (the payload).
+  const tokenPayload = token.split('.')[1]
+
   const locale = userData.country || 'es'
 
   try {
@@ -40,18 +43,19 @@ export async function sendCreateUserEmail (userData) {
       return
     }
 
-    const emailData = {
+    const emailTemplate = {
       name: userData.givenName,
       familyName: userData.familyName,
       email: userData.email,
       locale,
-      subject: 'Subject',
-      greeting: 'Greeting',
-      body: 'body',
-      ctaText: 'cta text',
+      subject: emailData.subject,
+      greeting: emailData.greeting,
+      body: emailData.body,
+      ctaLink: `${baseUrl}/newpassword?email=${userData.email}&key=${tokenPayload}&lang=${locale}`,
+      ctaText: emailData.ctaText,
     }
 
-    await sendNotificationEmail(emailData)
+    await sendNotificationEmail(emailTemplate)
 
   } catch (err) {
     console.error(err)

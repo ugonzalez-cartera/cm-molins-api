@@ -2,6 +2,8 @@
 
 import jwt from 'jsonwebtoken'
 
+import { arraysOverlap } from '../services/utils.service.js'
+
 const DEFAULT_REASON = 'Access not authorized.'
 
 // --------------------
@@ -19,6 +21,8 @@ export async function verifyToken (req, reply) {
     // Refresh tokens don't have roles -- this prevents using RT's for accessing the API.
     if (!decodedToken.role) return reply.unauthorized()
 
+    console.info(' --> Access token for', decodedToken.sub, decodedToken.role)
+
     req.user = {
       id: decodedToken.sub,
       role: decodedToken.role,
@@ -31,13 +35,13 @@ export async function verifyToken (req, reply) {
 
 // --------------------
 export function authorize (req, reply, done) {
-  const { role: authorizedRole, reason } = req.routeOptions.config?.authorize || {}
-  const userRole = req.user?.role || 'guest'
+  const { role: authorizedRoles = [], reason } = req.routeOptions.config?.authorize || {}
+  const userRoles = req.user?.role || []
 
-  // If authorizedRole only contains '*', always allow the request.
-  if (authorizedRole === '*') return
+  // If authorizedRoles only contains '*', always allow the request.
+  if (authorizedRoles.length === 1 && authorizedRoles[0] === '*') return
 
-  if (userRole !== authorizedRole) {
+  if (!arraysOverlap(userRoles, authorizedRoles)) {
     req.log.warn(reason || DEFAULT_REASON)
     reply.forbidden()
     return reply

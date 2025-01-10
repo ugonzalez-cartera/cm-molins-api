@@ -11,9 +11,9 @@ const CounselorSchema = new Schema({
   givenName: { type: String, required: true },
   familyName: { type: String, required: true },
   email: { type: String, required: true, lowercase: true },
-  country: { type: String, required: true },
-  role: { type: String, required: true },
-  isNotActive: { type: Boolean, required: true },
+  country: { type: String, default: 'es' },
+  role: { type: Array, default: ['counselor'] },
+  isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
 },
 {

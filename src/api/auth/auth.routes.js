@@ -5,6 +5,7 @@ import config from '../../config.js'
 async function routes (fastify, opts) {
   // Set global authorization config
   opts.config = configAllowance(config.roleGroups.guest)
+
   fastify.post('/token', { ...opts }, getToken)
 
   fastify.post('/refreshtoken', { ...opts }, refreshToken)

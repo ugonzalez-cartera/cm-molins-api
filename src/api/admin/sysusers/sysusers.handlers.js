@@ -15,8 +15,8 @@ export async function createSysUser (req, reply) {
   const { email, givenName, familyName } = req.body
   if (!email) return reply.badRequest('Email and password are required.')
 
-  const isExisingUser = await SysUsers.exists({ email })
-  if (isExisingUser) return reply.conflict('User already exists.')
+  const isExistingUser = await SysUsers.exists({ email })
+  if (isExistingUser) return reply.conflict('User already exists.')
 
   const user = new SysUsers({
     email,
@@ -87,7 +87,7 @@ export async function getSysUser (req, reply) {
   const sysUserId = queryParamsSysUserId || id
 
   try {
-    const user = await SysUsers.findById(sysUserId).lean()
+    const user = await SysUsers.findOne(({ _id: sysUserId })).lean()
     if (!user) return reply.notFound('User not found.')
 
     return user

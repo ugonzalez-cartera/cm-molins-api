@@ -4,6 +4,7 @@ const config = {
     accessTokenExpiration: '45 minutes',
     refreshTokenExpiration: '30 days',
     newSysUserTokenExpiration: '24 hours',
+    newCounselorTokenExpiration: '24 hours',
   },
   // API prefix depending on environment
   apiPrefix: {
@@ -25,10 +26,10 @@ const config = {
   },
   roleList: ['admin', 'counselor'], // Ordered by hierarchy.
   roleGroups: {
-    guest: { role: 'guest' },
-    authenticated: { role: 'authenticated', reason: 'allowAuthenticatedOnly -- Access not authorized' },
-    admin: { role: 'admin', reason: 'allowAdminsOnly -- Access not authorized' },
-    counselor: { role: 'counselor', reason: 'allowCounselorsOnly -- Access not authorized' },
+    guest: { role: ['guest'] },
+    authenticated: { role: ['authenticated'], reason: 'allowAuthenticatedOnly -- Access not authorized' },
+    admin: { role: ['admin'], reason: 'allowAdminsOnly -- Access not authorized' },
+    counselor: { role: ['counselor'], reason: 'allowCounselorsOnly -- Access not authorized' },
   },
   //Mailing
   brevo: {
