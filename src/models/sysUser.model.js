@@ -1,12 +1,13 @@
-import { model, Schema } from 'mongoose'
+import mongoose from 'mongoose'
 
 import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+const { model, Schema, connection } = mongoose
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
-import { createChangeLog } from '../services/utils.service.js'
+connection.db.command({ collMod: 'sysusers', changeStreamPreAndPostImages: { enabled: true } })
 
 const SysuserSchema = new Schema({
   _id: { type: String, default: () => newId() },

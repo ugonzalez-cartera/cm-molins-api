@@ -108,33 +108,35 @@ export function arraysOverlap (arr1, arr2) {
 }
 
 // --------------------
-export async function createChangeLog ({ pre, collMod, collection, _id, newData, updatedBy }) {
-  mongoose.connection.db.command({ collMod,  changeStreamPreAndPostImages: { enabled: true } })
-
+export async function createChangeLog ({ pre, collection, _id, updatedBy }) {
   const changeStream = collection.watch(
     [{ $match: { 'documentKey._id': _id } }],
     { fullDocumentBeforeChange: 'required' },
   )
 
-  changeStream.on('change', async next => {
+  changeStream.once('change', async next => {
     const oldData = next.fullDocumentBeforeChange
+    const newData = next.updateDescription.updatedFields
 
-      try {
-        const changes = getChangeLogChanges(oldData, newData)
+    try {
+      const changes = getChangeLogChanges(oldData, newData)
 
-        for (const change of changes) {
-          const data = {
-            key: change.key,
-            old: change.old,
-            new: change.new,
-            updatedBy,
-          }
-
-          await ChangeLogs.findOneAndUpdate({ _id: `${pre}${_id}` }, { $push: { changes: data } }, { upsert: true });
+      for (const change of changes) {
+        const data = {
+          key: change.key,
+          old: change.old,
+          new: change.new,
+          updatedBy,
         }
-      } catch (err) {
-        console.error(' !! Could not create changelog', err)
-      }
-    })
 
+        await ChangeLogs.updateOne(
+          { _id: `${pre}${_id}` },
+          { $push: { changes: data } },
+          { upsert: true },
+        )
+      }
+    } catch (err) {
+      console.error(' !! Could not create changelog', err)
+    }
+  })
 }
