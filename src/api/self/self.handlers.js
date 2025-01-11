@@ -1,6 +1,6 @@
 import mongoose from 'mongoose'
 
-const SysUsers = mongoose.model('SysUser')
+const Sysusers = mongoose.model('Sysuser')
 const Counselors = mongoose.model('Counselor')
 
 // --------------------
@@ -8,7 +8,7 @@ export async function getSelfUser (req, reply) {
   const { id } = req.user
 
   try {
-    let user = await SysUsers.findOne({ _id: id }).lean()
+    let user = await Sysusers.findOne({ _id: id }).lean()
     if (!user) {
       user = await Counselors.findOne({ _id: id }).lean()
     }
@@ -17,7 +17,7 @@ export async function getSelfUser (req, reply) {
 
     return user
   } catch (err) {
-    console.error(' !! Could not get sysUser', err)
+    console.error(' !! Could not get sysuser.', err)
     return reply.internalServerError(err)
   }
 }

@@ -3,8 +3,7 @@ const config = {
   tokens: {
     accessTokenExpiration: '45 minutes',
     refreshTokenExpiration: '30 days',
-    newSysUserTokenExpiration: '24 hours',
-    newCounselorTokenExpiration: '24 hours',
+    newUserTokenExpiration: '24 hours',
   },
   // API prefix depending on environment
   apiPrefix: {

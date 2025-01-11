@@ -4,21 +4,23 @@ import jwt from 'jsonwebtoken'
 
 import config from '../../../config.js'
 
-import { generateStrongPassword } from '../../../services/utils.service.js'
+import { generateStrongPassword, createChangeLog } from '../../../services/utils.service.js'
 import { sendCreateUserEmail } from '../../../services/notification.service.js'
 
-const SysUsers = mongoose.model('SysUser')
+const Sysusers = mongoose.model('Sysuser')
 const UsersMetadata = mongoose.model('UserMetadata')
+const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
-export async function createSysUser (req, reply) {
+export async function createSysuser (req, reply) {
+  const { origin } = req.headers
   const { email, givenName, familyName } = req.body
   if (!email) return reply.badRequest('Email and password are required.')
 
-  const isExistingUser = await SysUsers.exists({ email })
-  if (isExistingUser) return reply.conflict('User already exists.')
+  const isExistingUser = await Sysusers.exists({ email })
+  if (isExistingUser) return reply.conflict('Sysuser already exists.')
 
-  const user = new SysUsers({
+  const user = new Sysusers({
     email,
     givenName,
     familyName,
@@ -36,7 +38,7 @@ export async function createSysUser (req, reply) {
     sub: user._id,
   }
 
-  const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.newSysUserTokenExpiration })
+  const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.newUserTokenExpiration })
 
   const newUserMeta = new UsersMetadata({ _id: user._id, password: hash, verificationToken: token })
 
@@ -45,13 +47,24 @@ export async function createSysUser (req, reply) {
     newUserMeta.save(),
   ])
 
-  await sendCreateUserEmail(user)
+  const emailData = {
+    _id: user._id,
+    name: user.givenName,
+    familyName: user.familyName.toUpperCase(),
+    email: user.email.toUpperCase(),
+    locale: user.country,
+    subject: `Bienvenido - ${user.givenName} ${user.familyName}`,
+    body: 'Para crear tu contraseña personalizada, haz clic en el botón',
+    ctaText: 'Crear nueva contraseña',
+  }
+
+  await sendCreateUserEmail({ userData: user, emailData, token, baseUrl: origin })
 
   return user
 }
 
 // --------------------
-export async function getSysUsers (req, reply) {
+export async function getSysusers (req, reply) {
   const { status, limit, page } = req.query
 
   const filter = {}
@@ -63,8 +76,8 @@ export async function getSysUsers (req, reply) {
 
   try {
     const [docs, docCount] = await Promise.all([
-      SysUsers.find(filter).skip(skip).limit(limit).lean(),
-      SysUsers.countDocuments(filter),
+      Sysusers.find(filter).skip(skip).limit(limit).lean(),
+      Sysusers.countDocuments(filter),
     ])
 
     if (docs.length  === 0) return reply.notFound('No users found.')
@@ -74,33 +87,34 @@ export async function getSysUsers (req, reply) {
       docCount,
      }
   } catch (err) {
-    console.error(' !! Could not get sysUsers', err)
+    console.error(' !! Could not get sysusers.', err)
     reply.internalServerError(err)
   }
 }
 
 // --------------------
-export async function getSysUser (req, reply) {
+export async function getSysuser (req, reply) {
   const { id } = req.user
-  const { sysUserId: queryParamsSysUserId } = req.params
+  const { sysuserId: queryParamsSysuserId } = req.params
 
-  const sysUserId = queryParamsSysUserId || id
+  const sysuserId = queryParamsSysuserId || id
 
   try {
-    const user = await SysUsers.findOne(({ _id: sysUserId })).lean()
+    const user = await Sysusers.findOne(({ _id: sysuserId })).lean()
     if (!user) return reply.notFound('User not found.')
 
     return user
   } catch (err) {
-    console.error(' !! Could not get sysUser', err)
+    console.error(' !! Could not get sysuser.', err)
     return reply.internalServerError(err)
   }
 }
 
 
 // --------------------
-export async function updateSysUser (req, reply) {
-  const { sysUserId } = req.params
+export async function updateSysuser (req, reply) {
+  const { id: userId } = req.user
+  const { sysuserId } = req.params
   const { givenName, familyName, email, isNotActive } = req.body
 
   const newData = {
@@ -111,12 +125,34 @@ export async function updateSysUser (req, reply) {
   }
 
   try {
-    const user = await SysUsers.findOneAndUpdate({ _id: sysUserId }, { $set: newData }, { new: true })
-    if (!user) return reply.notFound('User not found.')
+    const changeLog = { pre: 'sys_', collMod: 'sysusers', collection: Sysusers, _id: sysuserId, newData, updatedBy: userId }
+    await createChangeLog(changeLog)
 
-    return user
+    const sysuser = await Sysusers.findOneAndUpdate({ _id: sysuserId }, { $set: newData }, { new: true })
+    if (!sysuser) return reply.notFound('Sysuser not found.')
+
+
+    return sysuser
   } catch (err) {
-    console.error(' !! Could not update sysUser', err)
+    console.error(' !! Could not update sysuser', err)
+    return reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function deleteSysuser (req, reply) {
+  const { sysuserId } = req.params
+
+  try {
+    await Promise.all([
+      Sysusers.deleteOne({ _id: sysuserId }),
+      UsersMetadata.deleteOne({ _id: sysuserId }),
+      ChangeLogs.deleteOne({ _id: `sys_${sysuserId}` }),
+    ])
+
+    return { message: 'OK' }
+  } catch (err) {
+    console.error(' !! Could not delete sysuser.', err)
     return reply.internalServerError(err)
   }
 }

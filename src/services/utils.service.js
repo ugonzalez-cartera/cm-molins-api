@@ -1,11 +1,17 @@
 'use strict'
 
+import mongoose from 'mongoose'
 import axios from 'axios'
 import streamifier from 'streamifier'
 import { v2 as cloudinary } from 'cloudinary'
 import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
+
+import { getChangeLogChanges } from '../utils.js'
+
+// const ChangeLogs = mongoose.model('ChangeLog')
+import ChangeLogs from '../models/0_changelog.model.js'
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -21,6 +27,7 @@ const specialChars = '!@#&'
 const allChars = numbers + alpha + upperCaseAlpha + specialChars
 const newPassword = customAlphabet(allChars, 12)
 
+// --------------------
 export async function sendNotificationEmail (emailData, options = { isNoReply: false, template: 'default' }) {
   // If this is a test email, don't send it.
   const dummyDomains = ['test.com', 'prueba.com']
@@ -98,4 +105,36 @@ export async function deleteImage (publicId) {
 // --------------------
 export function arraysOverlap (arr1, arr2) {
   return arr1.some((item) => arr2.includes(item))
+}
+
+// --------------------
+export async function createChangeLog ({ pre, collMod, collection, _id, newData, updatedBy }) {
+  mongoose.connection.db.command({ collMod,  changeStreamPreAndPostImages: { enabled: true } })
+
+  const changeStream = collection.watch(
+    [{ $match: { 'documentKey._id': _id } }],
+    { fullDocumentBeforeChange: 'required' },
+  )
+
+  changeStream.on('change', async next => {
+    const oldData = next.fullDocumentBeforeChange
+
+      try {
+        const changes = getChangeLogChanges(oldData, newData)
+
+        for (const change of changes) {
+          const data = {
+            key: change.key,
+            old: change.old,
+            new: change.new,
+            updatedBy,
+          }
+
+          await ChangeLogs.findOneAndUpdate({ _id: `${pre}${_id}` }, { $push: { changes: data } }, { upsert: true });
+        }
+      } catch (err) {
+        console.error(' !! Could not create changelog', err)
+      }
+    })
+
 }

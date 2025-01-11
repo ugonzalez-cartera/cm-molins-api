@@ -1,3 +1,5 @@
+'use strict'
+
 import mongoose from 'mongoose'
 
 import { sendNotificationEmail } from './utils.service.js'

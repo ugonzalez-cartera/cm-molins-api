@@ -6,7 +6,9 @@ import config from '../config.js'
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
-const SysUserSchema = new Schema({
+import { createChangeLog } from '../services/utils.service.js'
+
+const SysuserSchema = new Schema({
   _id: { type: String, default: () => newId() },
   givenName: { type: String, required: true },
   familyName: { type: String, required: true },
@@ -25,6 +27,6 @@ const SysUserSchema = new Schema({
   id: false, // No additional id as virtual getter.
   toJSON: { versionKey: false, virtuals: true },
   toObject: { versionKey: false },
-})
+  })
 
-export default model('SysUser', SysUserSchema)
+export default model('Sysuser', SysuserSchema)

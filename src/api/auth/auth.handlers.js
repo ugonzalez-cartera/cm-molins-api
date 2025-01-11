@@ -9,7 +9,7 @@ import config from '../../config.js'
 import { sendRequestResetPasswordEmail } from '../../services/notification.service.js'
 
 
-const SysUsers = mongoose.model('SysUser')
+const Sysusers = mongoose.model('Sysuser')
 const Counselors = mongoose.model('Counselor')
 const UsersMetadata = mongoose.model('UserMetadata')
 
@@ -22,7 +22,7 @@ export async function getToken (req, reply) {
   try {
     let user = await Counselors.findOne({ email })
     if (!user) {
-      user = await SysUsers.findOne({ email })
+      user = await Sysusers.findOne({ email })
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
@@ -59,7 +59,7 @@ export async function getToken (req, reply) {
 
     return { token, refreshToken }
   } catch (err) {
-    console.error(` !! Unauthorized login attem for: ${email}`, err)
+    console.error(` !! Unauthorized login attem for: ${email}.`, err)
     reply.unauthorized(err)
   }
 }
@@ -80,7 +80,7 @@ export async function refreshToken (req, reply) {
     if (user) {
       user.role = ['counselor']
     } else {
-      user = await SysUsers.findOne({ _id: sub }).select('+role').lean()
+      user = await Sysusers.findOne({ _id: sub }).select('+role').lean()
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
@@ -88,7 +88,7 @@ export async function refreshToken (req, reply) {
     const userMeta = await UsersMetadata.findOne({ _id: sub })
     if (!userMeta) {
       console.error(`  !! Unauthorized refresh token attempt for ${sub} - User metadata not found.`)
-      return reply.notFound('User metadata not found')
+      return reply.notFound('User metadata not found.')
     }
 
     if (user.isNotActive) {
@@ -104,7 +104,7 @@ export async function refreshToken (req, reply) {
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
 
-    console.info(' Refresh token for', user._id, user.role)
+    console.info(' Refresh token for:', user._id, user.role)
 
     return { token }
   } catch (err) {
@@ -125,7 +125,7 @@ export async function requestResetPassword (req, reply) {
     if (user) {
       user.role = 'counselor'
     } else {
-      user = await SysUsers.findOne({ email, isNotActive: { $ne: true }  }).lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).lean()
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
@@ -143,7 +143,7 @@ export async function requestResetPassword (req, reply) {
       await sendRequestResetPasswordEmail(user, token, origin)
     }
   } catch (err) {
-    console.error(` !! Unauthorized password reset request for: ${email}`, err)
+    console.error(` !! Unauthorized password reset request for: ${email}.`, err)
     return reply.unauthorized(err)
   }
 }
@@ -156,12 +156,12 @@ export async function resetPassword (req, reply) {
   try {
     let user = await Counselors.findOne({ email, isNotActive: { $ne: true }  }).lean()
     if (!user) {
-      user = await SysUsers.findOne({ email, isNotActive: { $ne: true }  }).lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).lean()
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
 
-    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken')
+    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('verificationToken')
     if (!userMeta) return reply.unauthorized('User not found.')
 
     const verificationToken = userMeta.verificationToken
@@ -179,7 +179,7 @@ export async function resetPassword (req, reply) {
 
     reply.send({ msg: 'Password updated.' })
   } catch (err) {
-    console.error(`  ! Could not reset password for ${email} - ${err.name} / ${err.message}`)
+    console.error(`  ! Could not reset password for ${email} - ${err.name} / ${err.message}.`)
     switch (err.name) {
       case 'TokenExpiredError':
         return reply.conflict('Token has expired.') // code: 409

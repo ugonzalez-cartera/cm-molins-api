@@ -4,11 +4,12 @@ import jwt from 'jsonwebtoken'
 
 import config from '../../../config.js'
 
-import { generateStrongPassword } from '../../../services/utils.service.js'
+import { generateStrongPassword, createChangeLog } from '../../../services/utils.service.js'
 import { sendCreateUserEmail } from '../../../services/notification.service.js'
 
 const Counselors = mongoose.model('Counselor')
 const UsersMetadata = mongoose.model('UserMetadata')
+const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
 export async function createCounselor (req, reply) {
@@ -37,7 +38,7 @@ export async function createCounselor (req, reply) {
     sub: counselor._id,
   }
 
-  const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.newCounselorTokenExpiration })
+  const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.newUserTokenExpiration })
 
   const newCounselorMeta = new UsersMetadata({ _id: counselor._id, password: hash, verificationToken: token })
 
@@ -109,6 +110,7 @@ export async function getCounselor (req, reply) {
 
 // --------------------
 export async function updateCounselor (req, reply) {
+  const { id: userId } = req.user
   const { counselorId } = req.params
   const { givenName, familyName, email, isNotActive } = req.body
 
@@ -120,6 +122,9 @@ export async function updateCounselor (req, reply) {
   }
 
   try {
+    const changeLog = { pre: 'coun_', collMod: 'counselors', collection: Counselors, _id: counselorId, newData, updatedBy: userId }
+    await createChangeLog(changeLog)
+
     const counselor = await Counselors.findOneAndUpdate({ _id: counselorId }, { $set: newData }, { new: true })
     if (!counselor) return reply.notFound('Counselor not found.')
 
@@ -136,7 +141,11 @@ export async function deleteCounselor (req, reply) {
   if (!counselorId) return reply.badRequest('Missing params.')
 
   try {
-    await Counselors.deleteOne({ _id: counselorId })
+    await Promise.all([
+      Counselors.deleteOne({ _id: counselorId }),
+      UsersMetadata.deleteOne({ _id: counselorId }),
+      ChangeLogs.deleteOne({ _id: `coun_${counselorId}` }),
+    ])
 
     return { msg: 'OK' }
   } catch (err) {
