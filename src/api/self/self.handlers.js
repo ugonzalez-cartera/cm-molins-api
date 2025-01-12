@@ -1,12 +1,16 @@
 import mongoose from 'mongoose'
 
+import config from '../../config.js'
+
+import bcrypt from 'bcryptjs'
+
 const Sysusers = mongoose.model('Sysuser')
 const Counselors = mongoose.model('Counselor')
+const UsersMetadata = mongoose.model('UserMetadata')
 
 // --------------------
-export async function getSelfUser (req, reply) {
+export async function getOwnUser (req, reply) {
   const { id } = req.user
-
 
   try {
     let user = await Sysusers.findOne({ _id: id }).lean()
@@ -19,12 +23,12 @@ export async function getSelfUser (req, reply) {
     return user
   } catch (err) {
     console.error(' !! Could not get user.', err)
-    return reply.internalServerError(err)
+    reply.internalServerError(err)
   }
 }
 
 // --------------------
-export async function updateSelfUser (req, reply) {
+export async function updateOwnUser (req, reply) {
   const { id: userId } = req.user
   const { givenName, familyName, email } = req.body
 
@@ -43,24 +47,45 @@ export async function updateSelfUser (req, reply) {
     user.familyName = familyName
     user.email = email
 
-    console.info(user, 'user')
-
     await user.save()
 
     return user
   } catch (err) {
     console.error(' !! Could not update user.', err)
-    return reply.internalServerError(err)
+    reply.internalServerError(err)
   }
 }
 
 // --------------------
-export async function updateSelfPassword (req, reply) {
-  const { password, newPassword } = req.body
-  try {
+export async function updateOwnPassword (req, reply) {
+  const { id: userId } = req.user
+  const { currentPassword, newPassword } = req.body
 
+  if (!config.strongPassword.test(newPassword)) {
+    return reply.badRequest('Password is not strong enough.')
+  }
+
+  try {
+    const userMeta = await UsersMetadata.findOne({ _id: userId }).select('+password')
+    if (!userMeta) {
+      return reply.notFound('User metadata not found.')
+    }
+
+    if (userMeta.isNotActive) {
+      return reply.forbidden('User is suspended.')
+    }
+
+    const passwordsMatch = await bcrypt.compare(currentPassword, userMeta.toJSON().password)
+    if (!passwordsMatch) {
+      return reply.unauthorized()
+    }
+
+    userMeta.password = await bcrypt.hash(newPassword, 10)
+    await userMeta.save()
+
+    reply.send({ msg: 'Password updated.' })
   } catch (err) {
     console.error(' !! Could not update password.', err)
-    reply.internalServerError(err)
+    reply.internalServerError('DB error.')
   }
 }
