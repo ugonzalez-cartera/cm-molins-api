@@ -114,7 +114,12 @@ export async function createChangeLog ({ collection, _id, updatedBy }) {
     { fullDocumentBeforeChange: 'required' },
   )
 
+  let changeHandled = false
+
   changeStream.once('change', async next => {
+    if (changeHandled) return
+    changeHandled = true
+
     const oldData = next.fullDocumentBeforeChange
     const newData = next.updateDescription.updatedFields
 

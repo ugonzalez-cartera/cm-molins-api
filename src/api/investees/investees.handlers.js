@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import { uploadImage, deleteImage } from '../../services/utils.service.js'
+import { uploadImage, deleteImage, createChangeLog } from '../../services/utils.service.js'
 
 const Investees = mongoose.model('Investee')
 
@@ -72,7 +72,8 @@ export async function createInvestee (req, reply) {
 }
 
 // --------------------
-export async function updateInvestee(req, reply) {
+export async function updateInvestee (req, reply) {
+  const {  id: userId } = req.user
   const { investeeId } = req.params
 
   const {  name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description } = req.body || {}
@@ -80,6 +81,12 @@ export async function updateInvestee(req, reply) {
   try {
     const investee = await Investees.findOne({ _id: investeeId })
     if (!investee) return reply.notFound('Investee not found.')
+
+    const changeLog = {
+      collection: Investees,
+      _id: `inv_${investeeId}`,
+      updatedBy: userId,
+    }
 
     let uploadImageResult = null
     if (req.isMultipart()) {
@@ -99,6 +106,8 @@ export async function updateInvestee(req, reply) {
         investee.publicId = uploadImageResult.public_id
       }
 
+      await createChangeLog(changeLog)
+
       await investee.save()
     } else {
       investee.name = name
@@ -108,6 +117,8 @@ export async function updateInvestee(req, reply) {
       investee.websiteUrl = websiteUrl
       investee.headquarters = headquarters
       investee.description = description
+
+      await createChangeLog(changeLog)
 
       await investee.save()
     }

@@ -1,10 +1,14 @@
-import { model, Schema } from 'mongoose'
+import mongoose from 'mongoose'
 
 import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+const { model, Schema, connection } = mongoose
+
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
+
+connection.db.command({ collMod: 'investees', changeStreamPreAndPostImages: { enabled: true } })
 
 const InvesteeSchema = new Schema({
   _id: { type: String, default: () => newId() },
