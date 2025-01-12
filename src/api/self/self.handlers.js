@@ -53,3 +53,14 @@ export async function updateSelfUser (req, reply) {
     return reply.internalServerError(err)
   }
 }
+
+// --------------------
+export async function updateSelfPassword (req, reply) {
+  const { password, newPassword } = req.body
+  try {
+
+  } catch (err) {
+    console.error(' !! Could not update password.', err)
+    reply.internalServerError(err)
+  }
+}
