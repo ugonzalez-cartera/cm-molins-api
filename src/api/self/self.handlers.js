@@ -1,13 +1,12 @@
 import mongoose from 'mongoose'
 
-import { createChangeLog } from '../../services/utils.service.js'
-
 const Sysusers = mongoose.model('Sysuser')
 const Counselors = mongoose.model('Counselor')
 
 // --------------------
 export async function getSelfUser (req, reply) {
   const { id } = req.user
+
 
   try {
     let user = await Sysusers.findOne({ _id: id }).lean()
@@ -19,7 +18,7 @@ export async function getSelfUser (req, reply) {
 
     return user
   } catch (err) {
-    console.error(' !! Could not get sysuser.', err)
+    console.error(' !! Could not get user.', err)
     return reply.internalServerError(err)
   }
 }
@@ -29,32 +28,28 @@ export async function updateSelfUser (req, reply) {
   const { id: userId } = req.user
   const { givenName, familyName, email } = req.body
 
-  let prefix = 'sys_'
-
   try {
-    let user = await Sysusers.findOne({ _id: id })
+    let prefix = 'sys_'
+
+    let user = await Sysusers.findOne({ _id: userId })
     if (!user) {
-      user = await Counselors.findOne({ _id: id })
+      user = await Counselors.findOne({ _id: userId })
       prefix = 'coun_'
     }
 
     if (!user) return reply.notFound('User not found.')
 
-    await createChangeLog({
-      collection: user.constructor,
-      _id: `${prefix}${userId}`,
-      updatedBy: userId,
-    })
-
     user.givenName = givenName
     user.familyName = familyName
     user.email = email
+
+    console.info(user, 'user')
 
     await user.save()
 
     return user
   } catch (err) {
-    console.error(' !! Could not update sysuser.', err)
+    console.error(' !! Could not update user.', err)
     return reply.internalServerError(err)
   }
 }
