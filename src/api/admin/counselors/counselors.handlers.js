@@ -122,7 +122,12 @@ export async function updateCounselor (req, reply) {
   }
 
   try {
-    const changeLog = { pre: 'coun_', collection: Counselors, _id: counselorId, newData, updatedBy: userId }
+    const changeLog = {
+      collection: Counselors,
+      _id: `coun_${counselorId}`,
+      updatedBy: userId,
+    }
+
     await createChangeLog(changeLog)
 
     const counselor = await Counselors.findOneAndUpdate({ _id: counselorId }, { $set: newData }, { new: true })

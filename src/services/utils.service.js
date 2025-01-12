@@ -108,9 +108,9 @@ export function arraysOverlap (arr1, arr2) {
 }
 
 // --------------------
-export async function createChangeLog ({ pre, collection, _id, updatedBy }) {
+export async function createChangeLog ({ collection, _id, updatedBy }) {
   const changeStream = collection.watch(
-    [{ $match: { 'documentKey._id': _id } }],
+    [{ $match: { 'documentKey._id': _id.split('_')[1] } }],
     { fullDocumentBeforeChange: 'required' },
   )
 
@@ -130,7 +130,7 @@ export async function createChangeLog ({ pre, collection, _id, updatedBy }) {
         }
 
         await ChangeLogs.updateOne(
-          { _id: `${pre}${_id}` },
+          { _id },
           { $push: { changes: data } },
           { upsert: true },
         )

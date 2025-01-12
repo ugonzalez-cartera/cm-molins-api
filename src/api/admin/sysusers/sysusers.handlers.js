@@ -125,8 +125,13 @@ export async function updateSysuser (req, reply) {
   }
 
   try {
-    const changeLog = { pre: 'sys_', collection: Sysusers, _id: sysuserId, updatedBy: userId }
-    createChangeLog(changeLog)
+    const changeLog = {
+      collection: Sysusers,
+      _id: `sys_${sysuserId}`,
+      updatedBy: userId,
+    }
+
+    await createChangeLog(changeLog)
 
     const sysuser = await Sysusers.findOneAndUpdate({ _id: sysuserId }, { $set: newData }, { new: true })
     if (!sysuser) return reply.notFound('Sysuser not found.')
