@@ -54,7 +54,7 @@ export async function createCounselor (req, reply) {
     email: counselor.email.toUpperCase(),
     locale: counselor.country,
     subject: `Bienvenido - ${counselor.givenName} ${counselor.familyName}`,
-    body: 'Para crear tu contraseña personalizada, haz clic en el botón',
+    body: 'Para crear tu contraseña personalizada, haz clic en el botón.',
     ctaText: 'Crear nueva contraseña',
   }
 
@@ -88,7 +88,7 @@ export async function getCounselors (req, reply) {
       docCount,
      }
   } catch (err) {
-    console.error(' !! Could not get counselors', err)
+    console.error(' !! Could not get counselors.', err)
     reply.internalServerError(err)
   }
 }
@@ -103,7 +103,7 @@ export async function getCounselor (req, reply) {
 
     return counselor
   } catch (err) {
-    console.error(' !! Could not get counselor', err)
+    console.error(' !! Could not get counselor.', err)
     return reply.internalServerError(err)
   }
 }
@@ -136,7 +136,7 @@ export async function updateCounselor (req, reply) {
 
     return counselor
   } catch (err) {
-    console.error(' !! Could not update counselor', err)
+    console.error(' !! Could not update counselor.', err)
     return reply.internalServerError(err)
   }
 }
@@ -155,7 +155,7 @@ export async function deleteCounselor (req, reply) {
 
     return { msg: 'OK' }
   } catch (err) {
-    console.error(' !! Could not delete counselor', err)
+    console.error(' !! Could not delete counselor.', err)
     reply.internalServerError(err)
   }
 }
