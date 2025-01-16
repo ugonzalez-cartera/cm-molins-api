@@ -65,8 +65,9 @@ export async function createCounselor (req, reply) {
 
 // --------------------
 export async function getCounselors (req, reply) {
-  const { status, limit, page } = req.query
+  const { status, limit, page, sortField = 'createdAt', sortOrder = -1 } = req.query
 
+  const sort = { [sortField]: Number(sortOrder) }
   const filter = {}
   const skip = (limit * page) - limit
 
@@ -76,7 +77,7 @@ export async function getCounselors (req, reply) {
 
   try {
     const [docs, docCount] = await Promise.all([
-      Counselors.find(filter).skip(skip).limit(limit).sort({ createdAt: -1 }).lean(),
+      Counselors.find(filter).skip(skip).limit(limit).sort(sort).lean(),
       Counselors.countDocuments(filter),
     ])
 

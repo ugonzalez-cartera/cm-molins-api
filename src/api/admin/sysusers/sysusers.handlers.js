@@ -65,8 +65,9 @@ export async function createSysuser (req, reply) {
 
 // --------------------
 export async function getSysusers (req, reply) {
-  const { status, limit, page } = req.query
+  const { status, limit, page, sortField = 'createdAt', sortOrder } = req.query
 
+  const sort = { [sortField]: Number(sortOrder) }
   const filter = {}
   const skip = (limit * page) - limit
 
@@ -76,7 +77,7 @@ export async function getSysusers (req, reply) {
 
   try {
     const [docs, docCount] = await Promise.all([
-      Sysusers.find(filter).skip(skip).limit(limit).lean(),
+      Sysusers.find(filter).skip(skip).limit(limit).sort(sort).lean(),
       Sysusers.countDocuments(filter),
     ])
 

@@ -9,8 +9,9 @@ const Investees = mongoose.model('Investee')
 // --------------------
 export async function getInvestees (req, reply) {
   try {
-    const { page, type, limit } = req.query
+    const { page, type, name, limit, sortField = 'name', sortOrder = 1 } = req.query
 
+    const sort = {  [sortField]: Number(sortOrder) }
     const filter = {}
     const skip = (limit * page) - limit
 
@@ -18,8 +19,12 @@ export async function getInvestees (req, reply) {
       filter.type = { $in: type.split(',') }
     }
 
+    if (name) {
+      filter.name = { $in: name.split(',') }
+    }
+
     const [docs, docCount] = await Promise.all([
-      Investees.find(filter).skip(skip).limit(limit).lean(),
+      Investees.find(filter).skip(skip).limit(limit).sort(sort).lean(),
       Investees.countDocuments(filter),
     ])
 

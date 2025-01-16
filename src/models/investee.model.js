@@ -19,12 +19,14 @@ const InvesteeSchema = new Schema({
   websiteUrl: { type: String },
   logoUrl: { type: String, required: true },
   publicId: { type: String, required: true },
-  headquarters: { type: String},
+  headquarters: { type: String },
   description: {
     es: { type: String, required: true },
     en: { type: String, required: true },
     ca: { type: String, required: true },
   },
+}, {
+  timestamps: true,
 })
 
 export default model('Investee', InvesteeSchema)
