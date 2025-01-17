@@ -65,9 +65,8 @@ export async function createCounselor (req, reply) {
 
 // --------------------
 export async function getCounselors (req, reply) {
-  const { status, limit, page, field = 'createdAt', order = -1 } = req.query
+  const { status, limit, page, sort } = req.query
 
-  const sort = { [field]: Number(order) }
   const filter = {}
   const skip = (limit * page) - limit
 

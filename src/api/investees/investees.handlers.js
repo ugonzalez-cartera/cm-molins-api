@@ -9,9 +9,8 @@ const Investees = mongoose.model('Investee')
 // --------------------
 export async function getInvestees (req, reply) {
   try {
-    const { page, type, name, limit, field = 'createdAt', order = -1 } = req.query
+    const { page, type, name, limit, sort } = req.query
 
-    const sort = {  [field]: Number(order) }
     const filter = {}
     const skip = (limit * page) - limit
 

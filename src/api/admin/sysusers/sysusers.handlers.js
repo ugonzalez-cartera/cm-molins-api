@@ -65,9 +65,8 @@ export async function createSysuser (req, reply) {
 
 // --------------------
 export async function getSysusers (req, reply) {
-  const { status, limit, page, field = 'createdAt', order } = req.query
+  const { status, limit, page, sort } = req.query
 
-  const sort = { [field]: Number(order) }
   const filter = {}
   const skip = (limit * page) - limit
 
