@@ -9,10 +9,12 @@ export async function start () {
     console.info('\n==> Connected to MongoDB.\n')
 
     // Since fastifyApp requires the connection to MongoDB to be established, we require it here exceptionally.
-    const {  fastify: fastifyApp } = await import('./app.js')
+    const { fastify: fastifyApp } = await import('./app.js')
+    const host = ("RENDER" in process.env) ? `0.0.0.0` : 'localhost'
+
 
     // Then start listening on the specific port.
-    await fastifyApp.listen({ port: process.env.PORT || 80 })
+    await fastifyApp.listen({ host, port: process.env.PORT || 80 })
     if (process.env.NODE_ENV === 'development') {
       fastifyApp.log.info('\n' + fastifyApp.printRoutes({ commonPrefix: false }))
     }
