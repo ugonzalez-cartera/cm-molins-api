@@ -41,8 +41,8 @@ export async function sendNotificationEmail (emailData, options = { isNoReply: f
 
   try {
     const { data } = await axios.post(config.brevo.endpoint, {
-      sender: { name: 'Cartera C.M', email: 'unaigoe91@gmail.com' },
-      replyTo: { name: 'Cartera C.M', email: 'unaigoe91@gmail.com' },
+      sender: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
+      replyTo: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
       to: [{ email: emailTo, name: nameTo }],
       templateId: config.brevo.template.notification,
       params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }]},
