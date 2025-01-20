@@ -54,7 +54,7 @@ fastify
       fieldSize: 100000, // Max field value size in bytes.
       fields: 10, // Max number of non-file fields.
       fileSize: 1000000, // For multipart forms, the max file size.
-      files: 1, // Max number of file fields.
+      files: 3, // Max number of file fields.
       headerPairs: 1000, // Max number of header key=>value pairs.
     },
   })

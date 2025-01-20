@@ -18,8 +18,6 @@ export async function getChangelogs (req, reply) {
 
   const changes = changesResult ? changesResult.changes : []
 
-  // console.info(changeLog, 'changes')
-
   if (!changeLog) return reply.notFound('Changelog not found.')
 
   return {

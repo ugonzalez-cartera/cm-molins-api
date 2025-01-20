@@ -25,8 +25,9 @@ const InvesteeSchema = new Schema({
     en: { type: String, required: true },
     ca: { type: String, required: true },
   },
-}, {
-  timestamps: true,
-})
+},
+  {
+    timestamps: true,
+  })
 
 export default model('Investee', InvesteeSchema)
