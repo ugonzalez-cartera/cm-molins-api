@@ -1,53 +1,102 @@
 'use strict'
 
 import mongoose from 'mongoose'
-
-import { uploadFile, deleteImage, createChangeLog } from '../../../services/utils.service.js'
-
-import dayjs from 'dayjs'
+import { uploadFile } from '../../../services/utils.service.js'
+import { getParsedDate } from '../../../utils.js'
 
 const Councils = mongoose.model('Council')
 
-export async function createCouncil (req, reply) {
-  const parts = req.files()
-  const files = []
+
+export async function getCouncils (req, reply) {
+  const { page, type, name, limit, sort } = req.query
+
+  const filter = {}
+  const skip = (limit * page) - limit
 
   try {
+    const councils = await Councils.find().skip(skip).limit(limit).sort(sort)
 
-  for await (const part of parts) {
-    if (part.file) {
-      files.push(part)
-      if (files.length > 3) {
-        return reply.badRequest('Maximum of 3 files allowed for docs')
+    return councils
+  } catch (err) {
+    console.error(' !! Could not get councils.', err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function createCouncil (req, reply) {
+
+  const parts = req.files()
+
+  const additionalDocs = []
+  let reportFile = {}
+  let month, year, agenda
+
+  const { date, agenda: councilAgenda } = req.body || {}
+
+  console.info('Creating council with date:', date, agenda)
+
+  try {
+    if (req.isMultipart()) {
+      const parts = req.files()
+
+      for await (const part of parts) {
+        if (part.file && part.fieldname === 'councilAdditionalDocs') {
+          additionalDocs.push(part)
+          if (additionalDocs.length > 3) {
+            return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
+          }
+        }
+
+        const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
+        const { date, agenda: councilAgenda } = councilData
+        const parsedData = getParsedDate(date)
+        month = parsedData.month
+        year = parsedData.year
+        agenda = councilAgenda
+
+
+        const buffer = await part.toBuffer()
+        const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
+
+        const folder = `carteracm/councils/${month}-${year}/${dir}`
+        const uploadImageResult = await uploadFile(buffer, folder, part.filename)
+
+        if (part.fieldname === 'councilAdditionalDocs') {
+          additionalDocs.push({
+            secureUrl: uploadImageResult.secure_url,
+            publicId: uploadImageResult.public_id
+          })
+        }
+
+        if (part.fieldname === 'councilReport') {
+          reportFile = {
+            secureUrl: uploadImageResult.secure_url,
+            publicId: uploadImageResult.public_id
+          }
+        }
       }
+    } else {
+      const parsedData = getParsedDate(date)
+      month = parsedData.month
+      year = parsedData.year
+      agenda = councilAgenda
     }
 
+    const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
 
-    const buffer = await part.toBuffer()
+    const council = new Councils({
+      _id: `${month}_${year}`,
+      report: reportFile,
+      agenda: parsedAgenda,
+      docs: additionalDocs.length > 0 ? additionalDocs : undefined
+    })
 
-    const { date, agenda } = JSON.parse(part.fields.councilData.value)
-    const month =  dayjs(date).format('MMMM')
-    const year = dayjs(date).format('YYYY')
-    console.info(month, year, agenda)
-    const folder = `carteracm/councils/${part.fieldname}`
-    const uploadImageResult = await uploadFile(buffer, folder, part.filename)
-  }
+    await council.save()
 
-  // console.info(files, 'files')
-//     const council = new Councils({
-//       _id: `${month.toUpperCase()}_${year}`,
-//       minutes,
-//       report,
-//       agenda,
-//       call,
-//       docs: files
-//     })
-//
-//     await council.save()
-//
-//     return council
+    return council
   } catch (err) {
-    console.error(' !! Could not create council', err)
+    console.error(' !! Could not create council.', err)
     reply.internalServerError(err)
   }
 }

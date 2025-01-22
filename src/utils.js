@@ -1,4 +1,8 @@
-export function getChangeLogChanges(oldObj, newObj, parentKey = '') {
+'use strict'
+
+import dayjs from 'dayjs'
+
+export function getChangeLogChanges (oldObj, newObj, parentKey = '') {
   const changes = []
 
   for (const key in newObj) {
@@ -15,6 +19,12 @@ export function getChangeLogChanges(oldObj, newObj, parentKey = '') {
   }
 
   return changes
+}
+
+export function getParsedDate (date) {
+  const month = dayjs(date).format('MMM').toUpperCase()
+  const year = dayjs(date).format('YYYY')
+  return { month, year }
 }
 
 // --------------------

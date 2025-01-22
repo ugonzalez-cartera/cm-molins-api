@@ -4,13 +4,21 @@ const { model, Schema, connection } = mongoose
 
 connection.db.command({ collMod: 'councils', changeStreamPreAndPostImages: { enabled: true } })
 
+const FileSchema = new Schema({
+  _id: false,
+  secureUrl: { type: String },
+  publicId: { type: String },
+}, {
+  id: false, // No additional id as virtual getter.
+})
+
 const CouncilSchema = new Schema({
   _id: { type: String, required: true }, //_id will be the year and month of the council: Ex FEB_2025
   minutes: { type: String },
-  report: { type: String },
+  report: { type: FileSchema },
   agenda: { type: String },
   call: { type: String, ref: 'Call' },
-  docs: { type: Array },
+  docs: { type: [FileSchema], default: undefined },
 },
 {
   collection: 'councils',
