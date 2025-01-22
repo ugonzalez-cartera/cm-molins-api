@@ -2,17 +2,15 @@
 
 import mongoose from 'mongoose'
 
-import { uploadImage, deleteImage, createChangeLog } from '../../../services/utils.service.js'
+import { uploadFile, deleteImage, createChangeLog } from '../../../services/utils.service.js'
 
+import dayjs from 'dayjs'
 
 const Councils = mongoose.model('Council')
 
 export async function createCouncil (req, reply) {
   const parts = req.files()
   const files = []
-
-
-  // const { year, month, minutes, report, agenda, call } = fields
 
   try {
 
@@ -24,13 +22,18 @@ export async function createCouncil (req, reply) {
       }
     }
 
+
     const buffer = await part.toBuffer()
 
-    const folder = 'carteracm/councils/docs'
-    const uploadImageResult = await uploadImage(buffer, folder, part.filename)
+    const { date, agenda } = JSON.parse(part.fields.councilData.value)
+    const month =  dayjs(date).format('MMMM')
+    const year = dayjs(date).format('YYYY')
+    console.info(month, year, agenda)
+    const folder = `carteracm/councils/${part.fieldname}`
+    const uploadImageResult = await uploadFile(buffer, folder, part.filename)
   }
 
-  console.info(files, 'files')
+  // console.info(files, 'files')
 //     const council = new Councils({
 //       _id: `${month.toUpperCase()}_${year}`,
 //       minutes,

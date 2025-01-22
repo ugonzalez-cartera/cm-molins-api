@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import { uploadImage, deleteImage, createChangeLog } from '../../services/utils.service.js'
+import { uploadFile, deleteImage, createChangeLog } from '../../services/utils.service.js'
 
 const Investees = mongoose.model('Investee')
 
@@ -51,7 +51,7 @@ export async function createInvestee (req, reply) {
     const buffer = await file.fields.investeeFile.toBuffer()
 
     const folder = 'carteracm/investees'
-    const uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
+    const uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
 
     const investee = new Investees({
       name,
@@ -102,7 +102,7 @@ export async function updateInvestee (req, reply) {
         const buffer = await file.fields.investeeFile.toBuffer()
 
         const folder = 'carteracm/investees'
-        uploadImageResult = await uploadImage(buffer, folder, investeeFile.filename)
+        uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
       }
 
       if (uploadImageResult) {
