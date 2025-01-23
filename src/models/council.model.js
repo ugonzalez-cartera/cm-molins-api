@@ -19,6 +19,8 @@ const CouncilSchema = new Schema({
   agenda: { type: String },
   call: { type: String, ref: 'Call' },
   docs: { type: [FileSchema], default: undefined },
+  year: {  type: String, required: true },
+  month: { type: String, required: true },
 },
 {
   collection: 'councils',
@@ -27,6 +29,6 @@ const CouncilSchema = new Schema({
   id: false, // No additional id as virtual getter.
   toJSON: { versionKey: false, virtuals: true },
   toObject: { versionKey: false },
-  })
+})
 
 export default model('Council', CouncilSchema)

@@ -8,7 +8,7 @@ const Councils = mongoose.model('Council')
 
 
 export async function getCouncils (req, reply) {
-  const { page, type, name, limit, sort } = req.query
+  const { page, limit, sort = 'year' } = req.query
 
   const filter = {}
   const skip = (limit * page) - limit
@@ -89,8 +89,11 @@ export async function createCouncil (req, reply) {
       _id: `${month}_${year}`,
       report: reportFile,
       agenda: parsedAgenda,
+      year,
+      month,
       docs: additionalDocs.length > 0 ? additionalDocs : undefined
     })
+
 
     await council.save()
 

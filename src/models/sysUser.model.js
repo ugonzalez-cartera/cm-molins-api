@@ -28,6 +28,6 @@ const SysuserSchema = new Schema({
   id: false, // No additional id as virtual getter.
   toJSON: { versionKey: false, virtuals: true },
   toObject: { versionKey: false },
-  })
+})
 
 export default model('Sysuser', SysuserSchema)
