@@ -21,6 +21,13 @@ const CouncilSchema = new Schema({
   docs: { type: [FileSchema], default: undefined },
   year: {  type: String, required: true },
   month: { type: String, required: true },
+})
+
+const CouncilBucketSchema = new Schema({
+  _id: { type: String, required: true },
+  councils: { type: [CouncilSchema], default: undefined },
+  year: { type: String, required: true },
+  month: { type: String, required: true },
 },
 {
   collection: 'councils',
@@ -31,4 +38,4 @@ const CouncilSchema = new Schema({
   toObject: { versionKey: false },
 })
 
-export default model('Council', CouncilSchema)
+export default model('CouncilBucket', CouncilBucketSchema)
