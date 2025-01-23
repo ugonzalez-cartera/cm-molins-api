@@ -4,8 +4,7 @@ import mongoose from 'mongoose'
 import { uploadFile } from '../../../services/utils.service.js'
 import { getParsedDate } from '../../../utils.js'
 
-const Councils = mongoose.model('Council')
-
+const CouncilsBucket = mongoose.model('CouncilBucket')
 
 export async function getCouncils (req, reply) {
   const { page, limit, sort = 'year' } = req.query
@@ -14,7 +13,7 @@ export async function getCouncils (req, reply) {
   const skip = (limit * page) - limit
 
   try {
-    const councils = await Councils.find().skip(skip).limit(limit).sort(sort)
+    const councils = await CouncilsBucket.find().skip(skip).limit(limit).sort(sort)
 
     return councils
   } catch (err) {
@@ -28,6 +27,7 @@ export async function createCouncil (req, reply) {
   const additionalDocs = []
   let reportFile = {}
   let month, year, agenda
+  let newCouncilBucket
   let newCouncil
 
   try {
@@ -70,17 +70,21 @@ export async function createCouncil (req, reply) {
           }
         }
       }
+
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
 
-      newCouncil = new Councils({
+       newCouncil = {
         _id: `${month}_${year}`,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
-        year,
-        month,
-      })
+      }
 
+      newCouncilBucket = await CouncilsBucket.findOneAndUpdate(
+        { _id: year },
+        { $push: { councils: newCouncil } },
+        { upsert: true, new: true }
+      )
     } else {
       const { date, agenda } = req.body || {}
 
@@ -89,17 +93,18 @@ export async function createCouncil (req, reply) {
       month = parsedData.month
       year = parsedData.year
 
-      newCouncil = new Councils({
+      newCouncil = {
         _id: `${month}_${year}`,
         agenda: parsedAgenda,
-        year,
-        month,
-      })
+      }
     }
 
-    await newCouncil.save()
-
-    return newCouncil
+    newCouncilBucket = await CouncilsBucket.findOneAndUpdate(
+      { _id: year },
+      { $push: { councils: newCouncil } },
+      { upsert: true, new: true }
+    )
+    return newCouncilBucket
   } catch (err) {
     console.error(' !! Could not create council.', err)
     reply.internalServerError(err)
