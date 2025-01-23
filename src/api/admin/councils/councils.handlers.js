@@ -25,16 +25,10 @@ export async function getCouncils (req, reply) {
 
 // --------------------
 export async function createCouncil (req, reply) {
-
-  const parts = req.files()
-
   const additionalDocs = []
   let reportFile = {}
   let month, year, agenda
-
-  const { date, agenda: councilAgenda } = req.body || {}
-
-  console.info('Creating council with date:', date, agenda)
+  let newCouncil
 
   try {
     if (req.isMultipart()) {
@@ -76,28 +70,36 @@ export async function createCouncil (req, reply) {
           }
         }
       }
+      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+
+      newCouncil = new Councils({
+        _id: `${month}_${year}`,
+        report: reportFile,
+        docs: additionalDocs.length > 0 ? additionalDocs : undefined,
+        agenda: parsedAgenda,
+        year,
+        month,
+      })
+
     } else {
+      const { date, agenda } = req.body || {}
+
+      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       const parsedData = getParsedDate(date)
       month = parsedData.month
       year = parsedData.year
-      agenda = councilAgenda
+
+      newCouncil = new Councils({
+        _id: `${month}_${year}`,
+        agenda: parsedAgenda,
+        year,
+        month,
+      })
     }
 
-    const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+    await newCouncil.save()
 
-    const council = new Councils({
-      _id: `${month}_${year}`,
-      report: reportFile,
-      agenda: parsedAgenda,
-      year,
-      month,
-      docs: additionalDocs.length > 0 ? additionalDocs : undefined
-    })
-
-
-    await council.save()
-
-    return council
+    return newCouncil
   } catch (err) {
     console.error(' !! Could not create council.', err)
     reply.internalServerError(err)
