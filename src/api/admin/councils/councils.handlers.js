@@ -79,12 +79,6 @@ export async function createCouncil (req, reply) {
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
       }
-
-      newCouncilBucket = await CouncilsBucket.findOneAndUpdate(
-        { _id: year },
-        { $push: { councils: newCouncil } },
-        { upsert: true, new: true }
-      )
     } else {
       const { date, agenda } = req.body || {}
 
