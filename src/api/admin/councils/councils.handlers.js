@@ -1,27 +1,5 @@
 'use strict'
 
-import mongoose from 'mongoose'
-import { uploadFile } from '../../../services/utils.service.js'
-import { getParsedDate } from '../../../utils.js'
-
-const CouncilsBucket = mongoose.model('CouncilBucket')
-
-export async function getCouncils (req, reply) {
-  const { page, limit, sort = '-_id' } = req.query
-
-  const filter = {}
-  const skip = (limit * page) - limit
-
-  try {
-    const councils = await CouncilsBucket.find().skip(skip).limit(limit).sort(sort)
-
-    return councils
-  } catch (err) {
-    console.error(' !! Could not get councils.', err)
-    reply.internalServerError(err)
-  }
-}
-
 // --------------------
 export async function createCouncil (req, reply) {
   const additionalDocs = []
