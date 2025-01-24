@@ -1,4 +1,4 @@
-import { getCounselors, createCounselor, deleteCounselor, updateCounselor } from './counselors.handlers.js'
+import { getCounselors, createCounselor, deleteCounselor, updateCounselor, getCounselorById } from './counselors.handlers.js'
 
 import { configAllowance } from '../../../services/authorization.service.js'
 import config from '../../../config.js'
@@ -10,6 +10,7 @@ async function routes (fastify, opts) {
   fastify.get('/', { ...opts }, getCounselors)
   fastify.post('/', { ...opts }, createCounselor)
   fastify.put('/:counselorId', { ...opts }, updateCounselor)
+  fastify.get('/:counselorId', { ...opts }, getCounselorById)
   fastify.delete('/:counselorId', { ...opts }, deleteCounselor)
 }
 

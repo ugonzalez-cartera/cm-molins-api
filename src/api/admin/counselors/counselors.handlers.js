@@ -93,6 +93,19 @@ export async function getCounselors (req, reply) {
 }
 
 // --------------------
+export async function getCounselorById (req, reply) {
+  const { counselorId } = req.params
+
+  try {
+    const counselor = await Counselors.findOne({ _id: counselorId }).lean()
+
+    return counselor
+  } catch (err) {
+    console.error(' !! Could not get counselor.', counselorId, err)
+  }
+}
+
+// --------------------
 export async function getCounselor (req, reply) {
   const { counselorId } = req.params
 

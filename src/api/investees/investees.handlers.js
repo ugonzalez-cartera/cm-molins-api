@@ -35,6 +35,21 @@ export async function getInvestees (req, reply) {
 }
 
 // --------------------
+export async function fetchInvesteeById (req, reply) {
+  try {
+    const { investeeId } = req.params
+
+    const investee = await Investees.findOne({ _id: investeeId }).lean()
+    if (!investee) return reply.notFound('Investee not found.')
+
+    return investee
+  } catch (err) {
+    console.error(' !! Could not fetch investee', investeeId, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
 export async function createInvestee (req, reply) {
   try {
     const file = await req.file()
@@ -76,6 +91,48 @@ export async function createInvestee (req, reply) {
 }
 
 // --------------------
+export async function updateInvesteeImage (req, reply) {
+  const { id: userId } = req.user
+  const { investeeId } = req.params
+
+  try {
+    const investee = await Investees.findOne({ _id: investeeId })
+    if (!investee) return reply.notFound('Investee not found.')
+
+    const file = await req?.file()
+
+    let uploadImageResult
+    if (file) {
+      const investeeFile = file.fields.investeeFile
+
+      const buffer = await file.fields.investeeFile.toBuffer()
+
+      const folder = 'carteracm/investees'
+      uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
+    }
+
+    if (uploadImageResult) {
+      investee.logoUrl = uploadImageResult.secure_url
+      investee.publicId = uploadImageResult.public_id
+    }
+
+    const changeLog = {
+      collection: Investees,
+      _id: `inv_${investeeId}`,
+      updatedBy: userId,
+    }
+
+    await createChangeLog(changeLog)
+
+    await investee.save()
+
+    return investee
+  } catch (err) {
+    console.error(' !! Could not update investee image.', err)
+    reply.internalServerError(err)
+  }
+}
+
 export async function updateInvestee (req, reply) {
   const {  id: userId } = req.user
   const { investeeId } = req.params
@@ -92,45 +149,22 @@ export async function updateInvestee (req, reply) {
       updatedBy: userId,
     }
 
-    let uploadImageResult = null
-    if (req.isMultipart()) {
-      const file = await req?.file()
+    investee.name = name
+    investee.type = type
+    investee.investedAt = investedAt
+    investee.disinvestedAt = disinvestedAt
+    investee.websiteUrl = websiteUrl
+    investee.headquarters = headquarters
+    investee.description = description
 
-      if (file) {
-        const investeeFile = file.fields.investeeFile
+    await createChangeLog(changeLog)
 
-        const buffer = await file.fields.investeeFile.toBuffer()
-
-        const folder = 'carteracm/investees'
-        uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
-      }
-
-      if (uploadImageResult) {
-        investee.logoUrl = uploadImageResult.secure_url
-        investee.publicId = uploadImageResult.public_id
-      }
-
-      await createChangeLog(changeLog)
-
-      await investee.save()
-    } else {
-      investee.name = name
-      investee.type = type
-      investee.investedAt = investedAt
-      investee.disinvestedAt = disinvestedAt
-      investee.websiteUrl = websiteUrl
-      investee.headquarters = headquarters
-      investee.description = description
-
-      await createChangeLog(changeLog)
-
-      await investee.save()
-    }
+    await investee.save()
 
     return investee
 
   } catch (err) {
-    console.error(` !! Could not update investe: ${investeeId}`, err)
+    console.error(` !! Could not update investe: ${investeeId}.`, err)
     reply.internalServerError(err)
   }
 }

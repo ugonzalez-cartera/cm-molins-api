@@ -7,7 +7,7 @@ import { getParsedDate } from '../../../utils.js'
 const CouncilsBucket = mongoose.model('CouncilBucket')
 
 export async function getCouncils (req, reply) {
-  const { page, limit, sort = 'year' } = req.query
+  const { page, limit, sort = '-_id' } = req.query
 
   const filter = {}
   const skip = (limit * page) - limit
@@ -29,21 +29,23 @@ export async function createCouncil (req, reply) {
   let month, year, agenda
   let newCouncilBucket
   let newCouncil
+  let updatedFiles = 0
 
   try {
     if (req.isMultipart()) {
       const parts = req.files()
-
       for await (const part of parts) {
         if (part.file && part.fieldname === 'councilAdditionalDocs') {
-          additionalDocs.push(part)
-          if (additionalDocs.length > 3) {
+          updatedFiles +=1
+          if (updatedFiles > 3) {
             return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
           }
         }
 
         const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
         const { date, agenda: councilAgenda } = councilData
+        if (! date || !councilAgenda) return reply.badRequest('Missing required fields.')
+
         const parsedData = getParsedDate(date)
         month = parsedData.month
         year = parsedData.year
@@ -81,6 +83,7 @@ export async function createCouncil (req, reply) {
       }
     } else {
       const { date, agenda } = req.body || {}
+      if (!date || !agenda) return reply.badRequest('Missing required fields.')
 
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       const parsedData = getParsedDate(date)
