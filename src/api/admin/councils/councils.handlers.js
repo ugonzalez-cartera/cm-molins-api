@@ -1,5 +1,12 @@
 'use strict'
 
+import mongoose from 'mongoose'
+
+import { getParsedDate } from '../../../utils.js'
+import {  uploadFile } from '../../../services/utils.service.js'
+
+const CouncilsBucket = mongoose.model('CouncilBucket')
+
 // --------------------
 export async function createCouncil (req, reply) {
   const additionalDocs = []
@@ -7,15 +14,15 @@ export async function createCouncil (req, reply) {
   let month, year, agenda
   let newCouncilBucket
   let newCouncil
-  let updatedFiles = 0
+  let filesToUpload = 0
 
   try {
     if (req.isMultipart()) {
       const parts = req.files()
       for await (const part of parts) {
         if (part.file && part.fieldname === 'councilAdditionalDocs') {
-          updatedFiles +=1
-          if (updatedFiles > 3) {
+          filesToUpload +=1
+          if (filesToUpload > 3) {
             return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
           }
         }
@@ -54,7 +61,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
 
        newCouncil = {
-        _id: `${month}_${year}`,
+        _id: `${month}-${year}`,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
@@ -69,7 +76,7 @@ export async function createCouncil (req, reply) {
       year = parsedData.year
 
       newCouncil = {
-        _id: `${month}_${year}`,
+        _id: `${month}-${year}`,
         agenda: parsedAgenda,
       }
     }

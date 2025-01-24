@@ -1,8 +1,6 @@
 'use strict'
 
 import mongoose from 'mongoose'
-import { uploadFile } from '../../services/utils.service.js'
-import { getParsedDate } from '../../utils.js'
 
 const CouncilsBucket = mongoose.model('CouncilBucket')
 
@@ -41,7 +39,7 @@ export async function getCouncilByYear (req, reply) {
 export async function getCouncil (req, reply) {
   try {
     const { councilYear, councilId } = req.params
-    const council = await CouncilsBucket.findOne({ _id: councilYear, 'councils._id': councilId }, { 'councils.$': 1 }).lean()
+    const council = await CouncilsBucket.findOne({ _id: councilYear, 'councils._id': councilId.toUpperCase() }, { 'councils.$': 1 }).lean()
 
     return council
   } catch (err) {
