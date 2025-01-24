@@ -8,13 +8,18 @@ const CouncilsBucket = mongoose.model('CouncilBucket')
 export async function getCouncils (req, reply) {
   const { page, limit, sort = '-_id' } = req.query
 
-  const filter = {}
   const skip = (limit * page) - limit
 
   try {
-    const councils = await CouncilsBucket.find().skip(skip).limit(limit).sort(sort)
+    const [docs, docsCount] = await Promise.all([
+      CouncilsBucket.find({}).skip(skip).limit(limit).sort(sort).lean(),
+      CouncilsBucket.countDocuments({})
+    ])
 
-    return councils
+    return {
+      docs,
+      docsCount,
+    }
   } catch (err) {
     console.error(' !! Could not get councils.', err)
     reply.internalServerError(err)
@@ -22,7 +27,7 @@ export async function getCouncils (req, reply) {
 }
 
 // --------------------
-export async function getCouncilByYear (req, reply) {
+export async function getCouncilsBucketByYear (req, reply) {
   const { councilYear } = req.params
 
   try {
@@ -44,6 +49,20 @@ export async function getCouncil (req, reply) {
     return council
   } catch (err) {
     console.error(' !! Could not get council.', councilYear, councilId, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function deleteCouncilsBucket (req, reply) {
+  const { councilYear } = req.params
+
+  try {
+    await CouncilsBucket.deleteOne({ _id: councilYear })
+
+    return 'OK'
+  } catch (err) {
+    console.error(' !! Could not delete council bucket.', councilYear, err)
     reply.internalServerError(err)
   }
 }
