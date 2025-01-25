@@ -44,11 +44,17 @@ export async function getCouncilsBucketByYear (req, reply) {
 export async function getCouncil (req, reply) {
   try {
     const { councilYear, councilId } = req.params
-    const council = await CouncilsBucket.findOne({ _id: councilYear, 'councils._id': councilId.toUpperCase() }).select('-_id councils').lean()
+
+    const council = await CouncilsBucket.findOne(
+      { _id: councilYear, councils: { $elemMatch: { _id: councilId.toUpperCase() } } },
+      { 'councils.$': 1 }
+    ).lean()
+
+    if (!council) return reply.notFound('Council not found.')
 
     return council.councils[0]
   } catch (err) {
-    console.error(' !! Could not get council.', councilYear, councilId, err)
+    console.error(' !! Could not get council.', err)
     reply.internalServerError(err)
   }
 }
