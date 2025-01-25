@@ -5,6 +5,8 @@ import mongoose from 'mongoose'
 import { getParsedDate } from '../../../utils.js'
 import {  uploadFile } from '../../../services/utils.service.js'
 
+import dayjs from 'dayjs'
+
 const CouncilsBucket = mongoose.model('CouncilBucket')
 
 // --------------------
@@ -31,7 +33,7 @@ export async function createCouncil (req, reply) {
         const { date, agenda: councilAgenda } = councilData
         if (! date || !councilAgenda) return reply.badRequest('Missing required fields.')
 
-        const parsedData = getParsedDate(date)
+        const parsedData = getParsedDate(dayjs(date).add(1, 'day'))
         month = parsedData.month
         year = parsedData.year
         agenda = councilAgenda
@@ -71,7 +73,7 @@ export async function createCouncil (req, reply) {
       if (!date || !agenda) return reply.badRequest('Missing required fields.')
 
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
-      const parsedData = getParsedDate(date)
+      const parsedData = getParsedDate(dayjs(date).add(1, 'day'))
       month = parsedData.month
       year = parsedData.year
 
