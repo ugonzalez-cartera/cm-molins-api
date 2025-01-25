@@ -52,17 +52,3 @@ export async function getCouncil (req, reply) {
     reply.internalServerError(err)
   }
 }
-
-// --------------------
-export async function deleteCouncilsBucket (req, reply) {
-  const { councilYear } = req.params
-
-  try {
-    await CouncilsBucket.deleteOne({ _id: councilYear })
-
-    return 'OK'
-  } catch (err) {
-    console.error(' !! Could not delete council bucket.', councilYear, err)
-    reply.internalServerError(err)
-  }
-}

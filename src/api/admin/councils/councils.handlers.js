@@ -94,3 +94,38 @@ export async function createCouncil (req, reply) {
     reply.internalServerError(err)
   }
 }
+
+// --------------------
+export async function deleteCouncilsBucket (req, reply) {
+  const { councilYear } = req.params
+
+  try {
+    await CouncilsBucket.deleteOne({ _id: councilYear })
+
+    return 'OK'
+  } catch (err) {
+    console.error(' !! Could not delete council bucket.', councilYear, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function deleteCouncil (req, reply) {
+  const { councilYear, councilId } = req.params
+
+  try {
+    const councilBucket = await CouncilsBucket.findOneAndUpdate(
+      { _id: councilYear },
+      { $pull: { councils: { _id: councilId } } },
+      { new: true }
+    )
+
+    if (councilBucket.councils.length === 0) {
+      // Clean up bucket if no more councils.
+      await CouncilsBucket.deleteOne({ _id: councilYear })
+    }
+  } catch (err) {
+    console.error(' !! Could not delete council year.', councilYear, err)
+    reply.internalServerError(err)
+  }
+}

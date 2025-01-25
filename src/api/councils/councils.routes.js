@@ -1,4 +1,4 @@
-import { getCouncils, getCouncilsBucketByYear, getCouncil, deleteCouncilsBucket } from './councils.handlers.js'
+import { getCouncils, getCouncilsBucketByYear, getCouncil } from './councils.handlers.js'
 
 import { configAllowance } from '../../services/authorization.service.js'
 import config from '../../config.js'
@@ -9,7 +9,6 @@ async function routes (fastify, opts) {
 
   fastify.get('/', { ...opts }, getCouncils)
   fastify.get('/:councilYear', { ...opts }, getCouncilsBucketByYear)
-  fastify.delete('/:councilYear', { ...opts }, deleteCouncilsBucket)
   fastify.get('/:councilYear/:councilId', { ...opts }, getCouncil)
 }
 
