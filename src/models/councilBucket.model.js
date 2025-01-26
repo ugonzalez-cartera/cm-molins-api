@@ -19,15 +19,13 @@ const CouncilSchema = new Schema({
   agenda: { type: String },
   call: { type: String, ref: 'Call' },
   docs: { type: [FileSchema], default: undefined },
-  year: {  type: String, required: true },
-  month: { type: String, required: true },
+  year: {  type: String },
+  month: { type: String },
 })
 
 const CouncilBucketSchema = new Schema({
   _id: { type: String, required: true }, //_id will be the year of the council: Ex 2025
   councils: { type: [CouncilSchema], default: undefined },
-  year: { type: String, required: true },
-  month: { type: String, required: true },
 },
 {
   collection: 'councils',

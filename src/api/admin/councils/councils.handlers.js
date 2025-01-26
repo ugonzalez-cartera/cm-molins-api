@@ -8,6 +8,8 @@ import dayjs from 'dayjs'
 
 const CouncilsBucket = mongoose.model('CouncilBucket')
 
+import { createChangeLog } from '../../../services/utils.service.js'
+
 // --------------------
 export async function createCouncil (req, reply) {
   const additionalDocs = []
@@ -88,12 +90,13 @@ export async function createCouncil (req, reply) {
 
     return newCouncilBucket
   } catch (err) {
-  if (err.code === 11000) { // Duplicate key error code
-    reply.code(409).send({ error: 'Council already exists' })
-  } else {
-    console.error(' !! Could not create council.', err)
-    reply.internalServerError(err)
-  }
+    if (err.code === 11000) {
+      // Duplicate key error code.
+      reply.code(409).send({ error: 'Council already exists' })
+    } else {
+      console.error(' !! Could not create council.', err)
+      reply.internalServerError(err)
+    }
   }
 }
 
@@ -112,22 +115,95 @@ export async function deleteCouncilsBucket (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncil (req, reply) {
+export async function updateCouncil (req, reply) {
   const { councilYear, councilId } = req.params
+  const { agenda, action } = req.body || {}
+
+  const update = {}
+  if (action === 'delete') {
+    update.$pull = { councils: { _id: councilId } }
+  } else {
+    if (agenda) {
+      update.$set = { 'councils.$.agenda': agenda }
+    }
+  }
 
   try {
     const councilBucket = await CouncilsBucket.findOneAndUpdate(
-      { _id: councilYear },
-      { $pull: { councils: { _id: councilId } } },
+      { _id: councilYear, 'councils._id': councilId },
+      update,
       { new: true }
     )
+
+    if (!councilBucket) return reply.notFound('Council not found.')
 
     if (councilBucket.councils.length === 0) {
       // Clean up bucket if no more councils.
       await CouncilsBucket.deleteOne({ _id: councilYear })
     }
+
+    return councilBucket
   } catch (err) {
     console.error(' !! Could not delete council year.', councilYear, err)
     reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function updateCouncilReport (req, reply) {
+  const { id: userId } = req.user
+  const { councilYear, councilId } = req.params
+
+  try {
+    const councilBucket = await CouncilsBucket.findOne(
+      {
+        _id: councilYear,
+        'councils._id': councilId,
+      },
+      { 'councils.$': 1 },
+    )
+    if (!councilBucket) return reply.notFound('Council not found.')
+
+    const file = await req?.file()
+
+    let uploadImageResult
+    if (file) {
+      const councilReportFile = file.fields.councilReportFile
+
+      const buffer = await file.fields.councilReportFile.toBuffer()
+
+      const folder = `carteracm/councils/${councilId}/reports`
+      uploadImageResult = await uploadFile(buffer, folder, councilReportFile.filename)
+    }
+
+    let reportFile
+    if (uploadImageResult) {
+      reportFile = {
+        secureUrl: uploadImageResult.secure_url,
+        publicId: uploadImageResult.public_id
+      }
+    }
+
+    const changeLog = {
+      collection: CouncilsBucket,
+      _id: `counc-buck_${councilYear}-${councilId}`,
+      updatedBy: userId,
+    }
+
+    await createChangeLog(changeLog)
+
+    await CouncilsBucket.updateOne(
+      { _id: councilYear, 'councils._id': councilId },
+      { $set: { 'councils.$.report': reportFile }
+    })
+  } catch (err) {
+    console.error(' !! Could not update council report', err)
+    if (err.http_code) {
+      const error = this.httpErrors.badRequest('Invalid format.')
+      error.code = err.http_code
+      reply.send(error)
+    } else {
+      reply.internalServerError(err)
+    }
   }
 }

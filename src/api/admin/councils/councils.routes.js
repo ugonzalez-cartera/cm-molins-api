@@ -1,4 +1,4 @@
-import { createCouncil, deleteCouncilsBucket, deleteCouncil } from './councils.handlers.js'
+import { createCouncil, deleteCouncilsBucket, updateCouncil, updateCouncilReport } from './councils.handlers.js'
 
 import { configAllowance } from '../../../services/authorization.service.js'
 import config from '../../../config.js'
@@ -9,7 +9,8 @@ async function routes (fastify, opts) {
 
   fastify.post('/', { ...opts }, createCouncil)
   fastify.delete('/:councilYear', { ...opts }, deleteCouncilsBucket)
-  fastify.put('/:councilYear/:councilId', { ...opts }, deleteCouncil)
+  fastify.put('/:councilYear/:councilId', { ...opts }, updateCouncil)
+  fastify.put('/:councilYear/:councilId/report', { ...opts }, updateCouncilReport)
 }
 
 export default routes
