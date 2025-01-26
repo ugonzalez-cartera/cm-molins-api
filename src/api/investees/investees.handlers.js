@@ -12,7 +12,7 @@ export async function getInvestees (req, reply) {
     const { page, type, name, limit, sort } = req.query
 
     const filter = {}
-    const skip = (limit * page) - limit
+    const skip = (Number(limit) * Number(page)) - Number(limit)
 
     if (type) {
       filter.type = { $in: type.split(',') }
