@@ -27,11 +27,16 @@ export async function getCouncils (req, reply) {
 }
 
 // --------------------
-export async function getCouncilsBucketByYear (req, reply) {
+export async function getCouncilsByYear (req, reply) {
   const { councilYear } = req.params
 
   try {
-    const council = await CouncilsBucket.findOne({ _id: councilYear }).lean()
+    const [council] = await CouncilsBucket.aggregate([
+      { $match: { _id: councilYear } },
+      { $unwind: '$councils' },
+      { $sort: { 'councils._id': 1 } },
+      { $group: { _id: '$_id', councils: { $push: '$councils' } } }
+    ])
 
     return council
   } catch (err) {

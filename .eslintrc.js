@@ -13,5 +13,9 @@ module.exports = {
     'no-console': ['error', { allow: ['info', 'warn', 'error'] }],
     'comma-dangle': ['error', 'always-multiline'],
     'padded-blocks': ['warn', 'never', { allowSingleLineBlocks: true }],
+    'no-multiple-empty-lines': ['error', { max: 1 }],
+    'no-undef': 'error',
+    'no-unused-vars': 'error',
+    'no-var': 'error',
   },
 }

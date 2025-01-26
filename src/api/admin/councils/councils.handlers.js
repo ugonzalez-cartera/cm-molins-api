@@ -30,18 +30,18 @@ export async function createCouncil (req, reply) {
 
         const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
         const { date, agenda: councilAgenda } = councilData
-        if (! date || !councilAgenda) return reply.badRequest('Missing required fields.')
+        if (!date || !councilAgenda) return reply.badRequest('Missing required fields.')
 
           agenda = councilAgenda
           month = dayjs(date).month()
           year = dayjs(date).year()
-
 
         const buffer = await part.toBuffer()
         const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
 
         const folder = `carteracm/councils/${month}-${year}/${dir}`
         const uploadImageResult = await uploadFile(buffer, folder, part.filename)
+
 
         if (part.fieldname === 'councilAdditionalDocs') {
           additionalDocs.push({
