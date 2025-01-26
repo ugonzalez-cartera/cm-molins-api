@@ -2,7 +2,6 @@
 
 import mongoose from 'mongoose'
 
-import { getParsedDate } from '../../../utils.js'
 import {  uploadFile } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
@@ -33,10 +32,9 @@ export async function createCouncil (req, reply) {
         const { date, agenda: councilAgenda } = councilData
         if (! date || !councilAgenda) return reply.badRequest('Missing required fields.')
 
-        const parsedData = getParsedDate(dayjs(date).add(1, 'day'))
-        month = parsedData.month
-        year = parsedData.year
-        agenda = councilAgenda
+          agenda = councilAgenda
+          month = dayjs(date).month()
+          year = dayjs(date).year()
 
 
         const buffer = await part.toBuffer()
@@ -73,9 +71,8 @@ export async function createCouncil (req, reply) {
       if (!date || !agenda) return reply.badRequest('Missing required fields.')
 
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
-      const parsedData = getParsedDate(dayjs(date).add(1, 'day'))
-      month = parsedData.month
-      year = parsedData.year
+      month = dayjs(date).month()
+      year = dayjs(date).year()
 
       newCouncil = {
         _id: `${month}-${year}`,
@@ -84,14 +81,19 @@ export async function createCouncil (req, reply) {
     }
 
     newCouncilBucket = await CouncilsBucket.findOneAndUpdate(
-      { _id: year },
+      { _id: year, councils: { $not: { $elemMatch: { _id: `${month}-${year}` } } } },
       { $push: { councils: newCouncil } },
       { upsert: true, new: true }
     )
+
     return newCouncilBucket
   } catch (err) {
+  if (err.code === 11000) { // Duplicate key error code
+    reply.code(409).send({ error: 'Council already exists' })
+  } else {
     console.error(' !! Could not create council.', err)
     reply.internalServerError(err)
+  }
   }
 }
 
