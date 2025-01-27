@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import { uploadFile, deleteImage, createChangeLog } from '../../services/utils.service.js'
+import { uploadFile, deleteFile, createChangeLog } from '../../services/utils.service.js'
 
 const Investees = mongoose.model('Investee')
 
@@ -177,7 +177,7 @@ export async function deleteInvestee (req, reply) {
     const investee = await Investees.findOneAndDelete({ _id: investeeId })
     if (!investee) return reply.notFound('Investee not found.')
 
-    await deleteImage(investee.publicId)
+    await deleteFile(investee.publicId)
 
     return { msg: 'Ok' }
 

@@ -98,7 +98,7 @@ export async function uploadFile (buffer, folder, imageName) {
 }
 
 // --------------------
-export async function deleteImage (publicId) {
+export async function deleteFile (publicId) {
   const result = await cloudinary.uploader.destroy(publicId)
 
   return result
