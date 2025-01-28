@@ -209,49 +209,72 @@ export async function updateCouncilReport (req, reply) {
 }
 
 // --------------------
-export async function updateCouncilDocs (req, reply) {
-  try {
-
-  } catch (err) {
-    console.error(' !! Could not update council docs', err)
-    if (err.http_code) {
-      const error = this.httpErrors.badRequest('Invalid format.')
-      error.code = err.http_code
-      reply.send(error)
-    } else {
-      reply.internalServerError(err)
-    }
-  }
-}
-
-// --------------------
 export async function deleteCouncilDoc (req, reply) {
   const { councilYear, councilId, docId } = req.params
 
-  const parsedDocId = docId.replaceAll('_', '/')
-
-  console.info('Deleting doc', parsedDocId)
+  const decodedDocId = decodeURIComponent(docId)
 
   try {
     const councilBucket = await CouncilsBucket.findOneAndUpdate(
       {
         _id: councilYear,
         'councils._id': councilId,
-        'councils.docs.publicId': parsedDocId,
+        'councils.$.docs.publicId': decodedDocId,
       },
-      { $pull: { 'councils.$.docs': { publicId: parsedDocId } } },
+      { $pull: { 'councils.$.docs': { publicId: decodedDocId } } },
       { new: true }
     )
 
-    console.info(councilBucket)
 
     if (!councilBucket) return reply.notFound('Council not found.')
 
-    await deleteFile(parsedDocId)
-    reply.send({ message: 'Document deleted successfully' })
+    await deleteFile(decodedDocId)
+
+    return 'OK'
 
   } catch (err) {
     console.error(' !! Could not delete council doc.', err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function createCouncilDocs (req, reply) {
+  const { councilYear, councilId } = req.params
+
+  try {
+    const councilBucket = await CouncilsBucket.findOne(
+      {
+        _id: councilYear,
+        'councils._id': councilId,
+      },
+      { 'councils.$': 1 },
+    )
+
+    if (!councilBucket) return reply.notFound('Council not found.')
+
+    const file = await req?.file()
+
+    let uploadImageResult
+    if (file) {
+      const councilReportFile = file.fields.councilReportFile
+
+      const buffer = await file.fields.councilReportFile.toBuffer()
+
+      const folder = `carteracm/councils/${councilId}/additional-docs`
+      uploadImageResult = await uploadFile(buffer, folder, councilReportFile.filename)
+    }
+
+    let reportFile
+    if (uploadImageResult) {
+      reportFile = {
+        secureUrl: uploadImageResult.secure_url,
+        publicId: uploadImageResult.public_id
+      }
+    }
+
+  } catch (err) {
+    console.error(' !! Could not create council doc', err)
     reply.internalServerError(err)
   }
 }
