@@ -6,13 +6,11 @@ const CouncilsBucket = mongoose.model('CouncilBucket')
 
 // --------------------
 export async function getCouncils (req, reply) {
-  const { page, limit, sort = '-_id' } = req.query
-
-  const skip = (limit * page) - limit
+  const {  sort } = req.query
 
   try {
     const [docs, docsCount] = await Promise.all([
-      CouncilsBucket.find({}).skip(skip).limit(limit).sort(sort).lean(),
+      CouncilsBucket.find({}).sort(sort).lean(),
       CouncilsBucket.countDocuments({})
     ])
 

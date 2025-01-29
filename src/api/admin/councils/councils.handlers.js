@@ -14,10 +14,12 @@ import { createChangeLog } from '../../../services/utils.service.js'
 export async function createCouncil (req, reply) {
   const additionalDocs = []
   let reportFile = {}
+  let filesToUpload = 0
+
   let month, year, agenda
+
   let newCouncilBucket
   let newCouncil
-  let filesToUpload = 0
 
   try {
     if (req.isMultipart()) {
@@ -42,20 +44,20 @@ export async function createCouncil (req, reply) {
         const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
 
         const folder = `carteracm/councils/${month}-${year}/${dir}`
-        const uploadImageResult = await uploadFile(buffer, folder, part.filename)
+        const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
 
         if (part.fieldname === 'councilAdditionalDocs') {
           additionalDocs.push({
-            secureUrl: uploadImageResult.secure_url,
-            publicId: uploadImageResult.public_id
+            secureUrl: uploadedFile.secure_url,
+            publicId: uploadedFile.public_id
           })
         }
 
         if (part.fieldname === 'councilReport') {
           reportFile = {
-            secureUrl: uploadImageResult.secure_url,
-            publicId: uploadImageResult.public_id
+            secureUrl: uploadedFile.secure_url,
+            publicId: uploadedFile.public_id
           }
         }
       }
@@ -166,21 +168,21 @@ export async function updateCouncilReport (req, reply) {
 
     const file = await req?.file()
 
-    let uploadImageResult
+    let uploadedFile
     if (file) {
       const councilReportFile = file.fields.councilReportFile
 
       const buffer = await file.fields.councilReportFile.toBuffer()
 
       const folder = `carteracm/councils/${councilId}/reports`
-      uploadImageResult = await uploadFile(buffer, folder, councilReportFile.filename)
+      uploadedFile = await uploadFile(buffer, folder, councilReportFile.filename)
     }
 
     let reportFile
-    if (uploadImageResult) {
+    if (uploadedFile) {
       reportFile = {
-        secureUrl: uploadImageResult.secure_url,
-        publicId: uploadImageResult.public_id
+        secureUrl: uploadedFile.secure_url,
+        publicId: uploadedFile.public_id
       }
     }
 
@@ -242,6 +244,9 @@ export async function deleteCouncilDoc (req, reply) {
 export async function createCouncilDocs (req, reply) {
   const { councilYear, councilId } = req.params
 
+  const additionalDocs = []
+  let filesToUpload = 0
+
   try {
     const councilBucket = await CouncilsBucket.findOne(
       {
@@ -253,26 +258,34 @@ export async function createCouncilDocs (req, reply) {
 
     if (!councilBucket) return reply.notFound('Council not found.')
 
-    const file = await req?.file()
+    const parts = req.files()
 
-    let uploadImageResult
-    if (file) {
-      const councilReportFile = file.fields.councilReportFile
+    let uploadedFile
+    for await (const part of parts) {
+      if (part.file) {
+        filesToUpload +=1
+        if (filesToUpload > 3) {
+          return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
+        }
+      }
 
-      const buffer = await file.fields.councilReportFile.toBuffer()
+      const buffer = await part.toBuffer()
 
       const folder = `carteracm/councils/${councilId}/additional-docs`
-      uploadImageResult = await uploadFile(buffer, folder, councilReportFile.filename)
+      const uploadedFile = await uploadFile(buffer, folder, part.filename)
+
+      additionalDocs.push({
+        secureUrl: uploadedFile.secure_url,
+        publicId: uploadedFile.public_id
+      })
     }
 
-    let reportFile
-    if (uploadImageResult) {
-      reportFile = {
-        secureUrl: uploadImageResult.secure_url,
-        publicId: uploadImageResult.public_id
-      }
-    }
+    await CouncilsBucket.updateOne(
+      { _id: councilYear, 'councils._id': councilId },
+      { $push: { 'councils.$.docs': { $each: additionalDocs } } }
+    )
 
+    console.info(additionalDocs)
   } catch (err) {
     console.error(' !! Could not create council doc', err)
     reply.internalServerError(err)
