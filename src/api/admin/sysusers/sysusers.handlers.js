@@ -65,9 +65,12 @@ export async function createSysuser (req, reply) {
 
 // --------------------
 export async function getSysusers (req, reply) {
+  const { id: userId } = req.user
   const { status, limit, page, sort } = req.query
 
-  const filter = {}
+  const filter = {
+    _id: { $not: { $eq: userId } }
+  }
   const skip = (limit * page) - limit
 
   if (status) {
@@ -79,8 +82,6 @@ export async function getSysusers (req, reply) {
       Sysusers.find(filter).skip(skip).limit(limit).sort(sort).lean(),
       Sysusers.countDocuments(filter),
     ])
-
-    if (docs.length  === 0) return reply.notFound('No users found.')
 
     return {
       docs,
