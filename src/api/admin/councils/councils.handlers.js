@@ -119,14 +119,15 @@ export async function deleteCouncilsBucket (req, reply) {
 // --------------------
 export async function updateCouncil (req, reply) {
   const { councilYear, councilId } = req.params
-  const { agenda, action } = req.body || {}
+  const { agenda, minutes, action } = req.body || {}
 
   const update = {}
   if (action === 'delete') {
     update.$pull = { councils: { _id: councilId } }
   } else {
-    if (agenda) {
-      update.$set = { 'councils.$.agenda': agenda }
+    update.$set = {
+      'councils.$.agenda': agenda,
+      'councils.$.minutes': minutes,
     }
   }
 

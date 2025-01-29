@@ -13,14 +13,14 @@ const FileSchema = new Schema({
 })
 
 const CouncilSchema = new Schema({
-  _id: { type: String, required: true }, // _id will be the month of the council. Ex: 01-2025
+  _id: { type: String, required: true }, // _id will be the month and year of the council. Ex: 01-2025
   minutes: { type: String },
-  report: { type: FileSchema },
   agenda: { type: String },
   call: { type: String, ref: 'Call' },
-  docs: { type: [FileSchema], default: undefined },
   year: {  type: String },
   month: { type: String },
+  report: { type: FileSchema },
+  docs: { type: [FileSchema], default: undefined },
 })
 
 const CouncilBucketSchema = new Schema({
