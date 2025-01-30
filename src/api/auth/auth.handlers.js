@@ -1,7 +1,7 @@
 'use strict'
 
+import argon2 from 'argon2'
 import jwt from 'jsonwebtoken'
-import bcrypt from'bcryptjs'
 import mongoose from 'mongoose'
 
 import config from '../../config.js'
@@ -36,8 +36,9 @@ export async function getToken (req, reply) {
       return reply.forbidden('User is not active.')
     }
 
-    const passwordMatch = await bcrypt.compare(password, userMeta.password)
-    if (!passwordMatch) return reply.unauthorized('Invalid password.')
+    console.info(userMeta.password, password)
+    const passwordsMatch = await argon2.verify(userMeta.password, password)
+    if (!passwordsMatch) return reply.unauthorized('Invalid password.')
 
       const payload = {
         sub: user._id,
@@ -173,7 +174,7 @@ export async function resetPassword (req, reply) {
     // This will throw an error if token is not correct.
     jwt.verify(verificationToken, process.env.API_SECRET)
 
-    userMeta.password = await bcrypt.hash(password, 10)
+    userMeta.password = await argon2.hash(password)
     userMeta.verificationToken = '-'
     await userMeta.save()
 

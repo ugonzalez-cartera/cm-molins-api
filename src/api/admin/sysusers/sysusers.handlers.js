@@ -1,11 +1,11 @@
-import mongoose from 'mongoose'
-import bcrypt from 'bcryptjs'
+import argon2 from 'argon2'
 import jwt from 'jsonwebtoken'
+import mongoose from 'mongoose'
 
 import config from '../../../config.js'
 
-import { generateStrongPassword, createChangeLog } from '../../../services/utils.service.js'
 import { sendCreateUserEmail } from '../../../services/notification.service.js'
+import { createChangeLog, generateStrongPassword } from '../../../services/utils.service.js'
 
 const Sysusers = mongoose.model('Sysuser')
 const UsersMetadata = mongoose.model('UserMetadata')
@@ -32,7 +32,7 @@ export async function createSysuser (req, reply) {
 
   const password = generateStrongPassword()
 
-  const hash = await bcrypt.hash(password, 10)
+  const hash = await argon2.hash(password)
 
   const payload = {
     sub: user._id,

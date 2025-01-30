@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 
 import config from '../../config.js'
 
-import bcrypt from 'bcryptjs'
+import argon2 from 'argon2'
 
 const Sysusers = mongoose.model('Sysuser')
 const Counselors = mongoose.model('Counselor')
@@ -75,12 +75,12 @@ export async function updateOwnPassword (req, reply) {
       return reply.forbidden('User is suspended.')
     }
 
-    const passwordsMatch = await bcrypt.compare(currentPassword, userMeta.toJSON().password)
+    const passwordsMatch = await argon2.verify(userMeta.toJSON().password, currentPassword)
     if (!passwordsMatch) {
       return reply.unauthorized()
     }
 
-    userMeta.password = await bcrypt.hash(newPassword, 10)
+    userMeta.password = await argon2.hash(newPassword)
     await userMeta.save()
 
     reply.send({ msg: 'Password updated.' })
