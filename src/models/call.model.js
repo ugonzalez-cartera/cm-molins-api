@@ -11,7 +11,7 @@ const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 const CallSchema = new Schema({
   _id: { type: String, default: () => newId() },
   title: { type: String, required: true },
-  description: { type: String, required: true },
+  description: { type: String },
   date: { type: Date, required: true },
   council: { type: String, ref: 'Council' },
 },
