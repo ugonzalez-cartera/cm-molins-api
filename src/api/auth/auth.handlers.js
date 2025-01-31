@@ -150,6 +150,7 @@ export async function requestResetPassword (req, reply) {
 
     // Only send email if userMeta was found.
     if (userMeta) {
+      console.info(user, 'USER')
       await sendRequestResetPasswordEmail(user, token, origin)
     }
 
