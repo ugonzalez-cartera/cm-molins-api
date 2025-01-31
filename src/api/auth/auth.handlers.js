@@ -75,15 +75,16 @@ export async function refreshToken (req, reply) {
     return reply.badRequest('Refresh token is required.')
   }
 
+
   try {
     // Decode the received refresh token *not* the one passed via Authorization header.
     const { sub } = jwt.verify(refreshToken, process.env.API_SECRET)
 
-    let user = await Counselors.findOne({ _id: sub }).select('_id').lean()
+    let user = await Counselors.findOne({ _id: sub }).select('_id role')
     if (user) {
       user.role = ['counselor']
     } else {
-      user = await Sysusers.findOne({ _id: sub }).select('_id +role isNotActive').lean()
+      user = await Sysusers.findOne({ _id: sub }).select('_id role isNotActive')
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
@@ -128,11 +129,11 @@ export async function requestResetPassword (req, reply) {
   if (!email) return reply.badRequest('Email is required.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email').lean()
+    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email role').lean()
     if (user) {
       user.role = ['counselor']
     } else {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName familyName email +roles').lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName familyName email role').lean()
     }
 
     if (!user) {
