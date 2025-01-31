@@ -49,9 +49,9 @@ export async function createCounselor (req, reply) {
 
   const emailData = {
     _id: counselor._id,
-    name: counselor.givenName,
+    name: counselor.givenName.toUpperCase(),
     familyName: counselor.familyName.toUpperCase(),
-    email: counselor.email.toUpperCase(),
+    email: counselor.email,
     locale: counselor.country,
     subject: `Bienvenido - ${counselor.givenName} ${counselor.familyName}`,
     body: 'Para crear tu contraseña personalizada, haz clic en el botón.',

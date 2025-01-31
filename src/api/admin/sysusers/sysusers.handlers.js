@@ -49,9 +49,9 @@ export async function createSysuser (req, reply) {
 
   const emailData = {
     _id: user._id,
-    name: user.givenName,
+    name: user.givenName.toUpperCase(),
     familyName: user.familyName.toUpperCase(),
-    email: user.email.toUpperCase(),
+    email: user.email,
     locale: user.country,
     subject: `Bienvenido - ${user.givenName} ${user.familyName}`,
     body: 'Para crear tu contraseña personalizada, haz clic en el botón',
