@@ -128,11 +128,11 @@ export async function requestResetPassword (req, reply) {
   if (!email) return reply.badRequest('Email is required.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName email').lean()
+    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email').lean()
     if (user) {
       user.role = ['counselor']
     } else {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName email +roles').lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName familyName email +roles').lean()
     }
 
     if (!user) {
@@ -150,7 +150,6 @@ export async function requestResetPassword (req, reply) {
 
     // Only send email if userMeta was found.
     if (userMeta) {
-      console.info(user, 'USER')
       await sendRequestResetPasswordEmail(user, token, origin)
     }
 

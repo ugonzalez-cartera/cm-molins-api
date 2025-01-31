@@ -15,9 +15,9 @@ export async function sendRequestResetPasswordEmail (userData, token, baseUrl) {
     const locale = userData.country || 'es'
 
     const emailData = {
-      name: userData.givenName,
+      name: userData.givenName.toUpperCase(),
       familyName: userData.familyName.toUpperCase(),
-      email: userData.email.toUpperCase(),
+      email: userData.email,
       locale,
       subject: `Restablecer contraseña - ${userData.givenName} ${userData.familyName}`,
       body: 'Para poder restablecer tu contraseña, haz clic en el botón:',
