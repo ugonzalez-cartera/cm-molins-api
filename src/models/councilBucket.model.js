@@ -20,7 +20,7 @@ const CouncilSchema = new Schema({
   year: {  type: String },
   month: { type: String },
   report: { type: FileSchema },
-  docs: { type: [FileSchema], default: undefined },
+  docs: { type: [FileSchema], default: []},
 })
 
 const CouncilBucketSchema = new Schema({

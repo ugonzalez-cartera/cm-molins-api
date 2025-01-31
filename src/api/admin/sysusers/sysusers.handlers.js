@@ -32,7 +32,7 @@ export async function createSysuser (req, reply) {
 
   const password = generateStrongPassword()
 
-  const hash = await argon2.hash(password)
+  const hash = await argon2.hash(password, { type: argon2.argon2id })
 
   const payload = {
     sub: user._id,

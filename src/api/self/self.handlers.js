@@ -80,7 +80,7 @@ export async function updateOwnPassword (req, reply) {
       return reply.unauthorized()
     }
 
-    userMeta.password = await argon2.hash(newPassword)
+    userMeta.password = await argon2.hash(password, { type: argon2.argon2id })
     await userMeta.save()
 
     reply.send({ msg: 'Password updated.' })

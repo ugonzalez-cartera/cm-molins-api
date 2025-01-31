@@ -77,13 +77,13 @@ export function generateStrongPassword () {
 }
 
 // --------------------
-export async function uploadFile (buffer, folder, imageName) {
+export async function uploadFile (buffer, folder, fileName) {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
         folder,
         upload_preset: 'ml_default',
-        public_id: imageName,
+        public_id: fileName,
         resource_type: 'auto',
         format: 'jpg',
       },

@@ -36,18 +36,18 @@ export async function getToken (req, reply) {
       return reply.forbidden('User is not active.')
     }
 
-    console.info(userMeta.password, password)
     const passwordsMatch = await argon2.verify(userMeta.password, password)
+    console.info(userMeta.password, password, passwordsMatch)
     if (!passwordsMatch) return reply.unauthorized('Invalid password.')
 
-      const payload = {
-        sub: user._id,
-        role: user.role,
-      }
+    const payload = {
+      sub: user._id,
+      role: user.role,
+    }
 
-      const refreshTokenPayload = {
-        sub: user._id,
-      }
+    const refreshTokenPayload = {
+      sub: user._id,
+    }
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
     const refreshToken = jwt.sign(refreshTokenPayload, process.env.API_SECRET, { expiresIn: config.tokens.refreshTokenExpiration })
@@ -58,10 +58,10 @@ export async function getToken (req, reply) {
 
     console.info(' --> Access token for', user._id, user.role)
 
-    return { token, refreshToken }
+    return reply.send({ token, refreshToken })
   } catch (err) {
-    console.error(` !! Unauthorized login attem for: ${email}.`, err)
-    reply.unauthorized(err)
+    console.error(` !! Unauthorized login attempt for: ${email}.`, err)
+    return reply.unauthorized(err)
   }
 }
 
@@ -107,10 +107,10 @@ export async function refreshToken (req, reply) {
 
     console.info(' Refresh token for:', user._id, user.role)
 
-    return { token }
+    return reply.send({ token })
   } catch (err) {
     console.error(' !! Unauthorized refresh token attempt:', err)
-    reply.unauthorized(err)
+    return reply.unauthorized(err)
   }
 }
 
@@ -143,6 +143,8 @@ export async function requestResetPassword (req, reply) {
     if (userMeta) {
       await sendRequestResetPasswordEmail(user, token, origin)
     }
+
+    return reply.send({ msg: 'Reset password email sent.' })
   } catch (err) {
     console.error(` !! Unauthorized password reset request for: ${email}.`, err)
     return reply.unauthorized(err)
@@ -155,30 +157,30 @@ export async function resetPassword (req, reply) {
   if (!email || !password || !token) return reply.badRequest('Missing information.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true }  }).lean()
+    let user = await Counselors.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
     if (!user) {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
     }
 
-    if (!user || !user.role) return reply.unauthorized('User not found.')
+    if (!user) return reply.notFound('User not found.')
 
     const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('verificationToken')
-    if (!userMeta) return reply.unauthorized('User not found.')
+    if (!userMeta) return reply.notFound('User not found.')
 
     const verificationToken = userMeta.verificationToken
 
-    if (verificationToken?.split('.')[1] !== token) {
-      return reply.unauthorized('Invalid token.')
+    if (token !== verificationToken?.split('.')[1]) {
+      return reply.unauthorized('Wrong token')
     }
 
     // This will throw an error if token is not correct.
     jwt.verify(verificationToken, process.env.API_SECRET)
 
-    userMeta.password = await argon2.hash(password)
+    userMeta.password = await argon2.hash(password, { type: argon2.argon2id })
     userMeta.verificationToken = '-'
     await userMeta.save()
 
-    reply.send({ msg: 'Password updated.' })
+    return reply.send({ msg: 'Password updated.' })
   } catch (err) {
     console.error(`  ! Could not reset password for ${email} - ${err.name} / ${err.message}.`)
     switch (err.name) {
