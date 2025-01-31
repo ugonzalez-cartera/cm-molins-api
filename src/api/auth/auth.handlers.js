@@ -21,13 +21,16 @@ export async function getToken (req, reply) {
 
   try {
     let user = await Counselors.findOne({ email })
-    if (!user) {
+    if (user) {
+      user.role = ['counselor']
+    } else {
       user = await Sysusers.findOne({ email })
+
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
 
-    const userMeta = await UsersMetadata.findOne({ userId: user._id }).select('+password').lean()
+    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+password').lean()
     if (!userMeta) return reply.unauthorized('User not found.')
 
     if (user.isNotActive) {
@@ -37,7 +40,6 @@ export async function getToken (req, reply) {
     }
 
     const passwordsMatch = await argon2.verify(userMeta.password, password)
-    console.info(userMeta.password, password, passwordsMatch)
     if (!passwordsMatch) return reply.unauthorized('Invalid password.')
 
     const payload = {
@@ -77,11 +79,11 @@ export async function refreshToken (req, reply) {
     // Decode the received refresh token *not* the one passed via Authorization header.
     const { sub } = jwt.verify(refreshToken, process.env.API_SECRET)
 
-    let user = await Counselors.findOne({ _id: sub }).lean()
+    let user = await Counselors.findOne({ _id: sub }).select('_id').lean()
     if (user) {
       user.role = ['counselor']
     } else {
-      user = await Sysusers.findOne({ _id: sub }).select('+role').lean()
+      user = await Sysusers.findOne({ _id: sub }).select('_id +role isNotActive').lean()
     }
 
     if (!user || !user.role) return reply.unauthorized('User not found.')
@@ -105,9 +107,13 @@ export async function refreshToken (req, reply) {
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
 
+    // Update lastSessionAt info on user.
+    user.lastSessionAt = new Date()
+    await user.save()
+
     console.info(' Refresh token for:', user._id, user.role)
 
-    return reply.send({ token })
+    return { token }
   } catch (err) {
     console.error(' !! Unauthorized refresh token attempt:', err)
     return reply.unauthorized(err)
@@ -122,14 +128,17 @@ export async function requestResetPassword (req, reply) {
   if (!email) return reply.badRequest('Email is required.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).lean()
+    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName email').lean()
     if (user) {
-      user.role = 'counselor'
+      user.role = ['counselor']
     } else {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).lean()
+      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName email +roles').lean()
     }
 
-    if (!user || !user.role) return reply.unauthorized('User not found.')
+    if (!user) {
+      // Return OK if no user to avoid giving extra unnecessary info.
+      return { msg: 'OK' }
+    }
 
     const payload = {
       sub: user._id,
@@ -144,10 +153,10 @@ export async function requestResetPassword (req, reply) {
       await sendRequestResetPasswordEmail(user, token, origin)
     }
 
-    return reply.send({ msg: 'Reset password email sent.' })
+    return { msg: 'OK' }
   } catch (err) {
-    console.error(` !! Unauthorized password reset request for: ${email}.`, err)
-    return reply.unauthorized(err)
+    console.error(` !! Could not request password for: ${email}.`, err)
+    return reply.internalServerError(err)
   }
 }
 
@@ -164,8 +173,7 @@ export async function resetPassword (req, reply) {
 
     if (!user) return reply.notFound('User not found.')
 
-    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('verificationToken')
-    if (!userMeta) return reply.notFound('User not found.')
+    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken')
 
     const verificationToken = userMeta.verificationToken
 
