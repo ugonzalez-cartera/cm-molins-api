@@ -301,9 +301,6 @@ export async function createCouncilCall (req, reply) {
 
   if (!councilYear || !councilId || !callData) return reply.badRequest('Missing required fields.')
 
-  console.info(callData, councilId, councilYear)
-  // return
-
   try {
     await CouncilsBucket.updateOne(
       { _id: councilYear, 'councils._id': councilId },
