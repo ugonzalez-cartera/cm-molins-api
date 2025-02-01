@@ -292,3 +292,25 @@ export async function createCouncilDocs (req, reply) {
     reply.internalServerError(err)
   }
 }
+
+
+// --------------------
+export async function createCouncilCall (req, reply) {
+  const { councilYear, councilId } = req.params
+  const callData = req.body
+
+  if (!councilYear || !councilId || !callData) return reply.badRequest('Missing required fields.')
+
+  console.info(callData, councilId, councilYear)
+  // return
+
+  try {
+    await CouncilsBucket.updateOne(
+      { _id: councilYear, 'councils._id': councilId },
+      { $set: { 'councils.$.call': callData } }
+    )
+  } catch (err) {
+    console.error(' !! Could not create call', err)
+    reply.internalServerError(err)
+  }
+}

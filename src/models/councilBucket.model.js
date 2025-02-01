@@ -12,15 +12,22 @@ const FileSchema = new Schema({
   id: false, // No additional id as virtual getter.
 })
 
+const CallSchema = new Schema({
+  _id: { type: String, default: () => newId() },
+  title: { type: String, required: true },
+  description: { type: String },
+  date: { type: Date, required: true },
+})
+
 const CouncilSchema = new Schema({
   _id: { type: String, required: true }, // _id will be the month and year of the council. Ex: 01-2025
   minutes: { type: String },
   agenda: { type: String },
-  call: { type: String, ref: 'Call' },
+  call: { type: CallSchema },
   year: {  type: String },
   month: { type: String },
   report: { type: FileSchema },
-  docs: { type: [FileSchema], default: []},
+  docs: { type: [FileSchema], default: [] },
 })
 
 const CouncilBucketSchema = new Schema({
