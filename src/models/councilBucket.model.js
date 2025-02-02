@@ -13,10 +13,12 @@ const FileSchema = new Schema({
 })
 
 const CallSchema = new Schema({
-  _id: { type: String, default: () => newId() },
+  _id: false,
   title: { type: String, required: true },
   description: { type: String },
   date: { type: Date, required: true },
+}, {
+  id: false, // No additional id as virtual getter.
 })
 
 const CouncilSchema = new Schema({

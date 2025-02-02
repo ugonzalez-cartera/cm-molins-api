@@ -40,14 +40,19 @@ export async function sendNotificationEmail (emailData, options = { isNoReply: f
   const subjectPrefix = process.env.NODE_ENV !== 'production' ? 'TEST - ' : ''
 
   try {
-    const { data } = await axios.post(config.brevo.endpoint, {
+    const dataToSend = {
+      subject: `${subjectPrefix}${emailSubject}`,
       sender: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
       replyTo: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
       to: [{ email: emailTo, name: nameTo }],
-      templateId: config.brevo.template.notification,
-      params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }]},
-      subject: `${subjectPrefix}${emailSubject}`,
-    },
+      templateId: emailData.templateId || config.brevo.template.notification,
+      params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }] },
+    }
+
+    if (emailData.attachment) dataToSend.attachment = emailData.attachment
+
+    const { data } = await axios.post(config.brevo.endpoint,
+      dataToSend,
     {
       headers: {
         'api-key': `${process.env.BREVO_API_KEY}`,
@@ -57,7 +62,7 @@ export async function sendNotificationEmail (emailData, options = { isNoReply: f
     })
 
     return data
-  } catch (error) {
+  } catch (err) {
     console.error('  !! Error sending notification email')
     console.error('         status:', err.response?.status)
     console.error('     statusText:', err.response?.statusText, '\n')

@@ -7,8 +7,9 @@ import {  uploadFile, deleteFile } from '../../../services/utils.service.js'
 import dayjs from 'dayjs'
 
 const CouncilsBucket = mongoose.model('CouncilBucket')
+const Counselors = mongoose.model('Counselor')
 
-import { createChangeLog } from '../../../services/utils.service.js'
+import { createChangeLog, sendNotificationEmail } from '../../../services/utils.service.js'
 
 // --------------------
 export async function createCouncil (req, reply) {
@@ -302,12 +303,49 @@ export async function createCouncilCall (req, reply) {
   if (!councilYear || !councilId || !callData) return reply.badRequest('Missing required fields.')
 
   try {
-    await CouncilsBucket.updateOne(
+    const councilBucket = await CouncilsBucket.findOneAndUpdate(
       { _id: councilYear, 'councils._id': councilId },
-      { $set: { 'councils.$.call': callData } }
+      { $set: { 'councils.$.call': callData } },
+      { new: true },
     )
+
+    if (!councilBucket) return reply.notFound('Council not found.')
+
+    const council = councilBucket.councils.find(c => c._id === councilId)
+
+    const emailData = {
+      templateId: 3,
+      description: council.call.description,
+      body: council.agenda,
+      title: council.call.title,
+      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.call.date).format('DD/MM/YYYY')}`,
+    }
+
+    const hasAttachment = council.docs.length > 0 || !!council.report
+    if (hasAttachment) {
+      emailData.attachment = [
+        // Add .jpg extension to publicId as public id has the original extension.
+        ...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId + '.jpg' })),
+        { url: council.report?.secureUrl, name: council.report?.publicId + '.jpg' },
+      ]
+    }
+
+    const counselors = await Counselors.find({ isNotActive: { $ne: true } }).lean()
+
+    for (const counselor of counselors) {
+      Object.assign(emailData,  {
+        name: counselor.givenName.toUpperCase(),
+        familyName: counselor.familyName.toUpperCase(),
+        email: counselor.email,
+        locale: counselor.country,
+      })
+
+      sendNotificationEmail(emailData)
+    }
+
+    return councilBucket
   } catch (err) {
-    console.error(' !! Could not create call', err)
+    console.error(' !! Could not create call.', err)
     reply.internalServerError(err)
   }
 }
