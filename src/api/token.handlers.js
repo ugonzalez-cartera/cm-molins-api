@@ -38,6 +38,8 @@ export function authorize (req, reply, done) {
   const { role: authorizedRoles = [], reason } = req.routeOptions.config?.authorize || {}
   const userRoles = req.user?.role || []
 
+  console.info(' --> Authorizing', req.user.id, 'for', authorizedRoles)
+
   // If authorizedRoles only contains '*', always allow the request.
   if (authorizedRoles.length === 1 && authorizedRoles[0] === '*') return
 
