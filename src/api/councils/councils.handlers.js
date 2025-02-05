@@ -2,21 +2,19 @@
 
 import mongoose from 'mongoose'
 
-const CouncilsBucket = mongoose.model('CouncilBucket')
+const Councils = mongoose.model('Council')
 
 // --------------------
 export async function getCouncils (req, reply) {
-  const {  sort } = req.query
-
   try {
-    const [docs, docsCount] = await Promise.all([
-      CouncilsBucket.find({}).sort(sort).lean(),
-      CouncilsBucket.countDocuments({})
+    const result = await Councils.aggregate([
+      { $group: { _id: '$year' } },
+      { $sort: { _id: -1 } }
     ])
 
     return {
-      docs,
-      docsCount,
+      docs: result.map(item => item._id),
+      docsCount: result.length,
     }
   } catch (err) {
     console.error(' !! Could not get councils.', err)
@@ -29,14 +27,11 @@ export async function getCouncilsByYear (req, reply) {
   const { councilYear } = req.params
 
   try {
-    const [council] = await CouncilsBucket.aggregate([
-      { $match: { _id: councilYear } },
-      { $unwind: '$councils' },
-      { $sort: { 'councils._id': 1 } },
-      { $group: { _id: '$_id', councils: { $push: '$councils' } } }
-    ])
+    const year = Number(councilYear)
 
-    return council
+    const councils = await Councils.find({ year }).lean()
+
+    return councils
   } catch (err) {
     console.error(' !! Could not get council by year.', councilYear, err)
     reply.internalServerError(err)
@@ -46,16 +41,13 @@ export async function getCouncilsByYear (req, reply) {
 // --------------------
 export async function getCouncil (req, reply) {
   try {
-    const { councilYear, councilId } = req.params
+    const { councilId } = req.params
 
-    const council = await CouncilsBucket.findOne(
-      { _id: councilYear, councils: { $elemMatch: { _id: councilId.toUpperCase() } } },
-      { 'councils.$': 1 }
-    ).lean()
+    const council = await Councils.findOne({ _id: councilId }).lean()
 
     if (!council) return reply.notFound('Council not found.')
 
-    return council.councils[0]
+    return council
   } catch (err) {
     console.error(' !! Could not get council.', err)
     reply.internalServerError(err)

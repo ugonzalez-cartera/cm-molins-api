@@ -6,7 +6,7 @@ import {  uploadFile, deleteFile } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 
-const CouncilsBucket = mongoose.model('CouncilBucket')
+const Councils = mongoose.model('Council')
 const Counselors = mongoose.model('Counselor')
 
 import { createChangeLog, sendNotificationEmail } from '../../../services/utils.service.js'
@@ -65,12 +65,13 @@ export async function createCouncil (req, reply) {
 
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
 
-       newCouncil = {
-        _id: `${month}-${year}`,
+      newCouncil = new Councils({
+        year,
+        month,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
-      }
+      })
     } else {
       const { date, agenda } = req.body || {}
       if (!date || !agenda) return reply.badRequest('Missing required fields.')
@@ -79,19 +80,17 @@ export async function createCouncil (req, reply) {
       month = dayjs(date).month()
       year = dayjs(date).year()
 
-      newCouncil = {
-        _id: `${month}-${year}`,
+      newCouncil = new Councils({
+        year,
+        month,
         agenda: parsedAgenda,
-      }
+      })
     }
 
-    newCouncilBucket = await CouncilsBucket.findOneAndUpdate(
-      { _id: year, councils: { $not: { $elemMatch: { _id: `${month}-${year}` } } } },
-      { $push: { councils: newCouncil } },
-      { upsert: true, new: true }
-    )
 
-    return newCouncilBucket
+    await newCouncil.save()
+
+    return newCouncil
   } catch (err) {
     if (err.code === 11000) {
       // Duplicate key error code.
@@ -104,49 +103,13 @@ export async function createCouncil (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncilsBucket (req, reply) {
+export async function deleteCouncilYear (req, reply) {
   const { councilYear } = req.params
 
   try {
-    await CouncilsBucket.deleteOne({ _id: councilYear })
+    await Councils.deleteMany({ year: Number(councilYear) })
 
-    return 'OK'
-  } catch (err) {
-    console.error(' !! Could not delete council bucket.', councilYear, err)
-    reply.internalServerError(err)
-  }
-}
-
-// --------------------
-export async function updateCouncil (req, reply) {
-  const { councilYear, councilId } = req.params
-  const { agenda, minutes, action } = req.body || {}
-
-  const update = {}
-  if (action === 'delete') {
-    update.$pull = { councils: { _id: councilId } }
-  } else {
-    update.$set = {
-      'councils.$.agenda': agenda,
-      'councils.$.minutes': minutes,
-    }
-  }
-
-  try {
-    const councilBucket = await CouncilsBucket.findOneAndUpdate(
-      { _id: councilYear, 'councils._id': councilId },
-      update,
-      { new: true }
-    )
-
-    if (!councilBucket) return reply.notFound('Council not found.')
-
-    if (councilBucket.councils.length === 0) {
-      // Clean up bucket if no more councils.
-      await CouncilsBucket.deleteOne({ _id: councilYear })
-    }
-
-    return councilBucket
+    return { msg: 'OK' }
   } catch (err) {
     console.error(' !! Could not delete council year.', councilYear, err)
     reply.internalServerError(err)
@@ -154,19 +117,51 @@ export async function updateCouncil (req, reply) {
 }
 
 // --------------------
-export async function updateCouncilReport (req, reply) {
-  const { id: userId } = req.user
-  const { councilYear, councilId } = req.params
+export async function deleteCouncil (req, reply) {
+  const { councilId } = req.params
 
   try {
-    const councilBucket = await CouncilsBucket.findOne(
-      {
-        _id: councilYear,
-        'councils._id': councilId,
-      },
-      { 'councils.$': 1 },
+    await Councils.deleteOne({ _id: councilId })
+
+    return 'OK'
+  } catch (err) {
+    console.error(' !! Could not delete council bucket.', councilId, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function updateCouncil (req, reply) {
+  const { councilId } = req.params
+  const { agenda, minutes } = req.body || {}
+
+  const update = { agenda, minutes }
+  console.info(update)
+
+  try {
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $set: update },
+      { new: true }
     )
-    if (!councilBucket) return reply.notFound('Council not found.')
+
+    if (!council) return reply.notFound('Council not found.')
+
+    return council
+  } catch (err) {
+    console.error(' !! Could not delete council year.', councilId, err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+export async function updateCouncilReport (req, reply) {
+  const { id: userId } = req.user
+  const { councilId } = req.params
+
+  try {
+    const council = await Councils.findOne({ _id: councilId })
+    if (!council) return reply.notFound('Council not found.')
 
     const file = await req?.file()
 
@@ -189,17 +184,14 @@ export async function updateCouncilReport (req, reply) {
     }
 
     const changeLog = {
-      collection: CouncilsBucket,
-      _id: `counc-buck_${councilYear}-${councilId}`,
+      collection: Councils,
+      _id: `counc_${councilId}`,
       updatedBy: userId,
     }
 
     await createChangeLog(changeLog)
 
-    await CouncilsBucket.updateOne(
-      { _id: councilYear, 'councils._id': councilId },
-      { $set: { 'councils.$.report': reportFile }
-    })
+    await Councils.updateOne({ _id: councilId }, { $set: { report: reportFile } })
   } catch (err) {
     console.error(' !! Could not update council report', err)
     if (err.http_code) {
@@ -214,23 +206,19 @@ export async function updateCouncilReport (req, reply) {
 
 // --------------------
 export async function deleteCouncilDoc (req, reply) {
-  const { councilYear, councilId, docId } = req.params
+  const { councilId, docId } = req.params
 
   const decodedDocId = decodeURIComponent(docId)
 
   try {
-    const councilBucket = await CouncilsBucket.findOneAndUpdate(
-      {
-        _id: councilYear,
-        'councils._id': councilId,
-        'councils.$.docs.publicId': decodedDocId,
-      },
-      { $pull: { 'councils.$.docs': { publicId: decodedDocId } } },
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $pull: { docs: { publicId: decodedDocId } } },
       { new: true }
     )
 
 
-    if (!councilBucket) return reply.notFound('Council not found.')
+    if (!council) return reply.notFound('Council not found.')
 
     await deleteFile(decodedDocId)
 
@@ -244,25 +232,18 @@ export async function deleteCouncilDoc (req, reply) {
 
 // --------------------
 export async function createCouncilDocs (req, reply) {
-  const { councilYear, councilId } = req.params
+  const { councilId } = req.params
 
   const additionalDocs = []
   let filesToUpload = 0
 
   try {
-    const councilBucket = await CouncilsBucket.findOne(
-      {
-        _id: councilYear,
-        'councils._id': councilId,
-      },
-      { 'councils.$': 1 },
-    )
+    const council = await Councils.findOne({ _id: councilId })
 
-    if (!councilBucket) return reply.notFound('Council not found.')
+    if (!council) return reply.notFound('Council not found.')
 
     const parts = req.files()
 
-    let uploadedFile
     for await (const part of parts) {
       if (part.file) {
         filesToUpload +=1
@@ -273,7 +254,7 @@ export async function createCouncilDocs (req, reply) {
 
       const buffer = await part.toBuffer()
 
-      const folder = `carteracm/councils/${councilId}/additional-docs`
+      const folder = `carteracm/councils/${council.year}/${councilId}/additional-docs`
       const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
       additionalDocs.push({
@@ -282,36 +263,45 @@ export async function createCouncilDocs (req, reply) {
       })
     }
 
-    await CouncilsBucket.updateOne(
-      { _id: councilYear, 'councils._id': councilId },
-      { $push: { 'councils.$.docs': { $each: additionalDocs } } }
+    await Councils.updateOne(
+      { _id: councilId },
+      { $push: { docs: { $each: additionalDocs } } }
     )
-
-    console.info(additionalDocs)
   } catch (err) {
     console.error(' !! Could not create council doc', err)
     reply.internalServerError(err)
   }
 }
 
+// --------------------
+export async function getAvailableCallCouncils (req, reply) {
+  const currentMonth = dayjs().month()
+  const currentYear = dayjs().year()
+  try {
+    const councils = await Councils.find({ month: { $gte: currentMonth }, year: { $gte: currentYear } }).lean()
+
+    return councils
+  } catch (err) {
+    console.error(' !! Could not get available call councils.', err)
+    reply.internalServerError(err)
+  }
+}
 
 // --------------------
 export async function createCouncilCall (req, reply) {
-  const { councilYear, councilId } = req.params
+  const { councilId } = req.params
   const callData = req.body
 
-  if (!councilYear || !councilId || !callData) return reply.badRequest('Missing required fields.')
+  if (!councilId || !callData) return reply.badRequest('Missing required fields.')
 
   try {
-    const councilBucket = await CouncilsBucket.findOneAndUpdate(
-      { _id: councilYear, 'councils._id': councilId },
-      { $set: { 'councils.$.call': callData } },
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $set: { call: callData } },
       { new: true },
     )
 
-    if (!councilBucket) return reply.notFound('Council not found.')
-
-    const council = councilBucket.councils.find(c => c._id === councilId)
+    if (!council) return reply.notFound('Council not found.')
 
     const emailData = {
       templateId: 3,
@@ -343,7 +333,7 @@ export async function createCouncilCall (req, reply) {
       sendNotificationEmail(emailData)
     }
 
-    return councilBucket
+    return council
   } catch (err) {
     console.error(' !! Could not create call.', err)
     reply.internalServerError(err)

@@ -8,8 +8,8 @@ async function routes (fastify, opts) {
   opts.config = configAllowance({ role: [...config.roleGroups.admin.role, ...config.roleGroups.counselor.role] })
 
   fastify.get('/', { ...opts }, getCouncils)
-  fastify.get('/:councilYear', { ...opts }, getCouncilsByYear)
-  fastify.get('/:councilYear/:councilId', { ...opts }, getCouncil)
+  fastify.get('/year/:councilYear', { ...opts }, getCouncilsByYear)
+  fastify.get('/:councilId', { ...opts }, getCouncil)
 }
 
 export default routes
