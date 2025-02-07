@@ -12,12 +12,12 @@
   "author": "Unai Gonzále Escalante",
   "license": "ISC",
   "devDependencies": {
-    "eslint": "^9.17.0",
     "nodemon": "^3.1.9",
     "pino-colada": "^2.2.2"
   },
   "dependencies": {
     "@binxhealth/pino-stackdriver": "^3.0.0",
+    "@eslint/js": "^9.19.0",
     "@fastify/autoload": "^6.0.3",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^13.0.0",

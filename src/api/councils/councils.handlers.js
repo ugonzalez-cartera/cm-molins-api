@@ -2,19 +2,35 @@
 
 import mongoose from 'mongoose'
 
+import dayjs from 'dayjs'
+
 const Councils = mongoose.model('Council')
 
 // --------------------
 export async function getCouncils (req, reply) {
-  try {
-    const result = await Councils.aggregate([
-      { $group: { _id: '$year' } },
-      { $sort: { _id: -1 } }
-    ])
+  const { coming } = req.query
 
-    return {
-      docs: result.map(item => item._id),
-      docsCount: result.length,
+  try {
+    if (coming) {
+      const currentYear = dayjs().year()
+      const currentMonth = dayjs().month()
+
+      const comingCouncils = await Councils.find({ year: currentYear, month: { $gte: currentMonth } }).lean()
+
+      return {
+        docs: comingCouncils,
+        docsCount: comingCouncils.length,
+      }
+    } else {
+      const result = await Councils.aggregate([
+        { $group: { _id: '$year' } },
+        { $sort: { _id: -1 } },
+      ])
+
+      return {
+        docs: result.map(item => item._id),
+        docsCount: result.length,
+      }
     }
   } catch (err) {
     console.error(' !! Could not get councils.', err)

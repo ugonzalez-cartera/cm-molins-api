@@ -19,7 +19,6 @@ export async function createCouncil (req, reply) {
 
   let month, year, agenda
 
-  let newCouncilBucket
   let newCouncil
 
   try {
@@ -136,7 +135,6 @@ export async function updateCouncil (req, reply) {
   const { agenda, minutes } = req.body || {}
 
   const update = { agenda, minutes }
-  console.info(update)
 
   try {
     const council = await Councils.findOneAndUpdate(
