@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import config from '../../../config.js'
 
 import { sendCreateUserEmail } from '../../../services/notification.service.js'
-import { createChangeLog, generateStrongPassword } from '../../../services/utils.service.js'
+import { generateStrongPassword } from '../../../services/utils.service.js'
 
 const Counselors = mongoose.model('Counselor')
 const UsersMetadata = mongoose.model('UserMetadata')
@@ -132,17 +132,10 @@ export async function updateCounselor (req, reply) {
     familyName,
     email,
     isNotActive,
+    updatedBy: userId,
   }
 
   try {
-    const changeLog = {
-      collection: Counselors,
-      _id: `coun_${counselorId}`,
-      updatedBy: userId,
-    }
-
-    await createChangeLog(changeLog)
-
     const counselor = await Counselors.findOneAndUpdate({ _id: counselorId }, { $set: newData }, { new: true })
     if (!counselor) return reply.notFound('Counselor not found.')
 

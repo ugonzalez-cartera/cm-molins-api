@@ -2,9 +2,10 @@
 
 import mongoose from 'mongoose'
 
-import { uploadFile, deleteFile, createChangeLog } from '../../services/utils.service.js'
+import { uploadFile, deleteFile } from '../../services/utils.service.js'
 
 const Investees = mongoose.model('Investee')
+const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
 export async function getInvestees (req, reply) {
@@ -116,15 +117,8 @@ export async function updateInvesteeImage (req, reply) {
       investee.publicId = uploadImageResult.public_id
     }
 
-    const changeLog = {
-      collection: Investees,
-      _id: `inv_${investeeId}`,
-      updatedBy: userId,
-    }
+    investee.updatedBy = userId
 
-    await createChangeLog(changeLog)
-
-    await investee.save()
 
     return investee
   } catch (err) {
@@ -143,12 +137,6 @@ export async function updateInvestee (req, reply) {
     const investee = await Investees.findOne({ _id: investeeId })
     if (!investee) return reply.notFound('Investee not found.')
 
-    const changeLog = {
-      collection: Investees,
-      _id: `inv_${investeeId}`,
-      updatedBy: userId,
-    }
-
     investee.name = name
     investee.type = type
     investee.investedAt = investedAt
@@ -156,8 +144,7 @@ export async function updateInvestee (req, reply) {
     investee.websiteUrl = websiteUrl
     investee.headquarters = headquarters
     investee.description = description
-
-    await createChangeLog(changeLog)
+    investee.updatedBy = userId
 
     await investee.save()
 
@@ -174,10 +161,12 @@ export async function deleteInvestee (req, reply) {
   try {
     const { investeeId } = req.params
 
-    const investee = await Investees.findOneAndDelete({ _id: investeeId })
-    if (!investee) return reply.notFound('Investee not found.')
+    const result = await Promise.all([
+      Investees.findOneAndDelete({ _id: investeeId }),
+      ChangeLogs.deleteOne({ _id: `inv_${investeeId}` }),
+    ])
 
-    await deleteFile(investee.publicId)
+    await deleteFile(result[0].publicId)
 
     return { msg: 'Ok' }
 

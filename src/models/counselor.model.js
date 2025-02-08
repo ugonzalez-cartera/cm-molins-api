@@ -4,6 +4,8 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+import { createChangeLog } from '../services/utils.service.js'
+
 const { model, Schema, connection } = mongoose
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
@@ -19,6 +21,7 @@ const CounselorSchema = new Schema({
   role: { type: Array, default: ['counselor'] },
   isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
+  updatedBy: { type: String },
 },
 {
   collection: 'counselors',
@@ -31,4 +34,10 @@ const CounselorSchema = new Schema({
   toObject: { versionKey: false },
   })
 
-export default model('Counselor', CounselorSchema)
+const CounselorModel = model('Counselor', CounselorSchema)
+
+const changeStream = CounselorModel.watch({ fullDocumentBeforeChange: 'required' })
+
+createChangeLog(changeStream, 'couns')
+
+export default CounselorModel

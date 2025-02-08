@@ -5,7 +5,7 @@ import mongoose from 'mongoose'
 import config from '../../../config.js'
 
 import { sendCreateUserEmail } from '../../../services/notification.service.js'
-import { createChangeLog, generateStrongPassword } from '../../../services/utils.service.js'
+import { generateStrongPassword } from '../../../services/utils.service.js'
 
 const Sysusers = mongoose.model('Sysuser')
 const UsersMetadata = mongoose.model('UserMetadata')
@@ -123,17 +123,10 @@ export async function updateSysuser (req, reply) {
     familyName,
     email,
     isNotActive,
+    updatedBy: userId,
   }
 
   try {
-    const changeLog = {
-      collection: Sysusers,
-      _id: `sys_${sysuserId}`,
-      updatedBy: userId,
-    }
-
-    await createChangeLog(changeLog)
-
     const sysuser = await Sysusers.findOneAndUpdate({ _id: sysuserId }, { $set: newData }, { new: true })
     if (!sysuser) return reply.notFound('Sysuser not found.')
 

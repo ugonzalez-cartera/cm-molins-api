@@ -9,7 +9,7 @@ import dayjs from 'dayjs'
 const Councils = mongoose.model('Council')
 const Counselors = mongoose.model('Counselor')
 
-import { createChangeLog, sendNotificationEmail } from '../../../services/utils.service.js'
+import { sendNotificationEmail } from '../../../services/utils.service.js'
 
 // --------------------
 export async function createCouncil (req, reply) {
@@ -131,10 +131,11 @@ export async function deleteCouncil (req, reply) {
 
 // --------------------
 export async function updateCouncil (req, reply) {
+  const { id: userId } = req.user
   const { councilId } = req.params
   const { agenda, minutes } = req.body || {}
 
-  const update = { agenda, minutes }
+  const update = { agenda, minutes, updatedBy: userId }
 
   try {
     const council = await Councils.findOneAndUpdate(
@@ -181,15 +182,7 @@ export async function updateCouncilReport (req, reply) {
       }
     }
 
-    const changeLog = {
-      collection: Councils,
-      _id: `counc_${councilId}`,
-      updatedBy: userId,
-    }
-
-    await createChangeLog(changeLog)
-
-    await Councils.updateOne({ _id: councilId }, { $set: { report: reportFile } })
+    await Councils.updateOne({ _id: councilId }, { $set: { report: reportFile, updatedBy: userId } })
   } catch (err) {
     console.error(' !! Could not update council report', err)
     if (err.http_code) {

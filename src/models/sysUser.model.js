@@ -4,6 +4,8 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+import { createChangeLog } from '../services/utils.service.js'
+
 const { model, Schema, connection } = mongoose
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
@@ -18,6 +20,7 @@ const SysuserSchema = new Schema({
   role: { type: Array, required: true },
   isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
+  updatedBy: { type: String },
 },
 {
   collection: 'sysusers',
@@ -30,4 +33,10 @@ const SysuserSchema = new Schema({
   toObject: { versionKey: false },
 })
 
-export default model('Sysuser', SysuserSchema)
+const SysuserModel = model('Sysuser', SysuserSchema)
+
+const changeStream = SysuserModel.watch({ fullDocumentBeforeChange: 'required' })
+
+createChangeLog(changeStream, 'sys')
+
+export default SysuserModel

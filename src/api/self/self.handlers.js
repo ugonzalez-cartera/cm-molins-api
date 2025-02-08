@@ -46,6 +46,7 @@ export async function updateOwnUser (req, reply) {
     user.givenName = givenName
     user.familyName = familyName
     user.email = email
+    user.updatedBy = userId
 
     await user.save()
 

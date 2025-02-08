@@ -4,6 +4,8 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+import {  createChangeLog } from '../services/utils.service.js'
+
 const { model, Schema, connection } = mongoose
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
@@ -25,9 +27,16 @@ const InvesteeSchema = new Schema({
     en: { type: String, required: true },
     ca: { type: String, required: true },
   },
+  updatedBy: { type: String },
 },
-  {
-    timestamps: true,
-  })
+{
+  timestamps: true,
+})
 
-export default model('Investee', InvesteeSchema)
+const InvesteeModel = model('Investee', InvesteeSchema)
+
+const changeStream = InvesteeModel.watch({ fullDocumentBeforeChange: 'required' })
+
+createChangeLog(changeStream, 'inv')
+
+export default  InvesteeModel

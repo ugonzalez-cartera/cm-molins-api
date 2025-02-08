@@ -4,6 +4,8 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
+import { createChangeLog } from '../services/utils.service.js'
+
 const { model, Schema, connection } = mongoose
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
@@ -38,6 +40,7 @@ const CouncilSchema = new Schema({
   month: { type: Number, required: true },
   report: { type: FileSchema },
   docs: { type: [FileSchema], default: [] },
+  updatedBy: { type: String },
 },
 {
   collection: 'councils',
@@ -49,4 +52,10 @@ const CouncilSchema = new Schema({
 },
 )
 
-export default model('Council', CouncilSchema)
+const CouncilModel = model('Council', CouncilSchema)
+
+const changeStream = CouncilModel.watch({ fullDocumentBeforeChange: 'required' })
+
+createChangeLog(changeStream, 'counc')
+
+export default CouncilModel

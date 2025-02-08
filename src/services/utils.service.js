@@ -10,7 +10,6 @@ import config from '../config.js'
 
 import { getChangeLogChanges } from '../utils.js'
 
-// const ChangeLogs = mongoose.model('ChangeLog')
 import ChangeLogs from '../models/0_changelog.model.js'
 
 cloudinary.config({
@@ -115,18 +114,8 @@ export function arraysOverlap (arr1, arr2) {
 }
 
 // --------------------
-export async function createChangeLog ({ collection, _id, updatedBy }) {
-  const changeStream = collection.watch(
-    [{ $match: { 'documentKey._id': _id.split('_')[1] } }],
-    { fullDocumentBeforeChange: 'required' },
-  )
-
-  let changeHandled = false
-
-  changeStream.once('change', async next => {
-    if (changeHandled) return
-    changeHandled = true
-
+export async function createChangeLog (stream, prefix) {
+  stream.on('change', async next => {
     const oldData = next.fullDocumentBeforeChange
     const newData = next.updateDescription.updatedFields
 
@@ -138,11 +127,11 @@ export async function createChangeLog ({ collection, _id, updatedBy }) {
           key: change.key,
           old: change.old,
           new: change.new,
-          updatedBy,
+          updatedBy: oldData.updatedBy,
         }
 
         await ChangeLogs.updateOne(
-          { _id },
+          { _id: `${prefix}_${oldData._id}` },
           { $push: { changes: data } },
           { upsert: true },
         )
