@@ -48,7 +48,7 @@ const config = {
     prefixes: {
       sysuser: 'sysuser_',
       counselor: 'counselor_',
-      investees: 'investestee_',
+      investees: 'investee_',
       council: 'council_',
     }
   },

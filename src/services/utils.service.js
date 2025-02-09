@@ -116,8 +116,9 @@ export function arraysOverlap (arr1, arr2) {
 // --------------------
 export async function createChangeLog (stream, prefix, collection) {
   let resumeToken
+  let currentStream = stream
 
-  stream.on('change', async next => {
+  currentStream.on('change', async next => {
     if (next.operationType === 'delete') return
 
     const oldData = next.fullDocumentBeforeChange
@@ -149,18 +150,16 @@ export async function createChangeLog (stream, prefix, collection) {
     }
   })
 
-  stream.on('error', err => {
+  currentStream.on('error', err => {
     console.error(' !! Change stream error', err)
     if (resumeToken) {
-      const newStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
-      createChangeLog(newStream, prefix, collection)
+      currentStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
     }
   })
 
-  stream.on('close', () => {
+  currentStream.on('close', () => {
     if (resumeToken) {
-      const newStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
-      createChangeLog(newStream, prefix, collection)
+      currentStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
     }
   })
 }
