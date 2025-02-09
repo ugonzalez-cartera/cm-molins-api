@@ -137,7 +137,9 @@ export async function createChangeLog (stream, prefix, collection) {
 
         await ChangeLogs.updateOne(
           { _id: `${prefix}${oldData._id}` },
-          { $addToSet: { changes: data } },
+          {
+            $push: { changes: data },
+          },
           { upsert: true },
         )
 
