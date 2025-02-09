@@ -15,10 +15,10 @@ export async function getCouncils (req, reply) {
       const currentYear = dayjs().year()
       const currentMonth = dayjs().month()
 
-      const comingCouncils = await Councils.find({ year: currentYear, month: { $gte: currentMonth } }).lean()
+      const comingCouncils = await Councils.findOne({ year: currentYear, month: { $gte: currentMonth } }).lean()
 
       return {
-        docs: comingCouncils,
+        docs: [comingCouncils],
         docsCount: comingCouncils.length,
       }
     } else {
@@ -45,7 +45,7 @@ export async function getCouncilsByYear (req, reply) {
   try {
     const year = Number(councilYear)
 
-    const councils = await Councils.find({ year }).lean()
+    const councils = await Councils.find({ year }).sort({ month: 1 }).lean()
 
     return councils
   } catch (err) {

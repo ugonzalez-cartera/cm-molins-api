@@ -38,9 +38,12 @@ export async function createCouncil (req, reply) {
         const { date, agenda: councilAgenda } = councilData
         if (!date || !councilAgenda) return reply.badRequest('Missing required fields.')
 
-          agenda = councilAgenda
-          month = dayjs(date).month()
-          year = dayjs(date).year()
+        agenda = councilAgenda
+        month = dayjs(date).month()
+        year = dayjs(date).year()
+
+        const isExistingCouncil = await Councils.findOne({ year, month })
+        if (isExistingCouncil) return reply.conflict('Council already exists')
 
         const buffer = await part.toBuffer()
         const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
@@ -81,6 +84,9 @@ export async function createCouncil (req, reply) {
       month = dayjs(date).month()
       year = dayjs(date).year()
 
+      const isExistingCouncil = await Councils.exists({ year, month })
+      if (isExistingCouncil) return reply.conflict('Council already exists')
+
       newCouncil = new Councils({
         year,
         month,
@@ -115,10 +121,15 @@ export async function deleteCouncilYear (req, reply) {
       await Promise.all([
         ChangeLogs.deleteOne({ councilId: council._id }),
         Councils.deleteOne({ year: Number(councilYear) }),
-        deleteFile(council.report?.publicId),
       ])
 
-      council.docs?.map(doc => deleteFile(doc.publicId))
+      if (council.report) {
+        deleteFile(council.report?.publicId)
+      }
+
+      if (!!council.docs.length) {
+        council.docs?.map(doc => deleteFile(doc.publicId))
+      }
     }
 
     return { msg: 'OK' }
@@ -282,7 +293,7 @@ export async function getAvailableCallCouncils (req, reply) {
   const currentMonth = dayjs().month()
   const currentYear = dayjs().year()
   try {
-    const councils = await Councils.find({ month: { $gte: currentMonth }, year: { $gte: currentYear } }).lean()
+    const councils = await Councils.find({ month: { $gte: currentMonth }, year: currentYear }).lean()
 
     return councils
   } catch (err) {
