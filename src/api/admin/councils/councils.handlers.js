@@ -109,10 +109,17 @@ export async function deleteCouncilYear (req, reply) {
   const { councilYear } = req.params
 
   try {
-    await Promise.all([
-      Councils.deleteMany({ year: Number(councilYear) }),
-      ChangeLogs.deleteMany({ _id: `` }),
-    ])
+    const councils = await Councils.find({ year: Number(councilYear) })
+
+    for (const council of councils) {
+      await Promise.all([
+        ChangeLogs.deleteOne({ councilId: council._id }),
+        Councils.deleteOne({ year: Number(councilYear) }),
+        deleteFile(council.report?.publicId),
+      ])
+
+      council.docs?.map(doc => deleteFile(doc.publicId))
+    }
 
     return { msg: 'OK' }
   } catch (err) {

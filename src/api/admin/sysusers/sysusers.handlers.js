@@ -10,6 +10,7 @@ import { generateStrongPassword } from '../../../services/utils.service.js'
 const Sysusers = mongoose.model('Sysuser')
 const UsersMetadata = mongoose.model('UserMetadata')
 const ChangeLogs = mongoose.model('ChangeLog')
+const Counselors = mongoose.model('Counselor')
 
 // --------------------
 export async function createSysuser (req, reply) {
@@ -18,8 +19,10 @@ export async function createSysuser (req, reply) {
   const { email, givenName, familyName } = req.body
   if (!email) return reply.badRequest('Email and password are required.')
 
-  const isExistingUser = await Sysusers.exists({ email })
-  if (isExistingUser) return reply.conflict('Sysuser already exists.')
+  // Do not allow creating a counselor with an existing email in counselors or sysusers collection.
+  const isExistingCounselor = await Counselors.exists({ email })
+  const isExistingSysuser = await Sysusers.exists({ email })
+  if (isExistingSysuser || isExistingCounselor) return reply.conflict('Sysuser already exists.')
 
   const user = new Sysusers({
     email,

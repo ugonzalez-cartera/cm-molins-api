@@ -116,8 +116,10 @@ export function arraysOverlap (arr1, arr2) {
 // --------------------
 export async function createChangeLog (stream, prefix) {
   stream.on('change', async next => {
+    if (next.operationType === 'delete') return
+
     const oldData = next.fullDocumentBeforeChange
-    const newData = next.updateDescription.updatedFields
+    const newData = next.updateDescription?.updatedFields || {}
 
     try {
       const changes = getChangeLogChanges(oldData, newData)
