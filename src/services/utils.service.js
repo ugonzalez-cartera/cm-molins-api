@@ -114,7 +114,9 @@ export function arraysOverlap (arr1, arr2) {
 }
 
 // --------------------
-export async function createChangeLog (stream, prefix) {
+export async function createChangeLog (stream, prefix, collection) {
+  let resumeToken
+
   stream.on('change', async next => {
     if (next.operationType === 'delete') return
 
@@ -137,9 +139,28 @@ export async function createChangeLog (stream, prefix) {
           { $push: { changes: data } },
           { upsert: true },
         )
+
+        resumeToken = next._id
+
+        stream.close()
       }
     } catch (err) {
       console.error(' !! Could not create changelog', err)
+    }
+  })
+
+  stream.on('error', err => {
+    console.error(' !! Change stream error', err)
+    if (resumeToken) {
+      const newStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
+      createChangeLog(newStream, prefix, collection)
+    }
+  })
+
+  stream.on('close', () => {
+    if (resumeToken) {
+      const newStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
+      createChangeLog(newStream, prefix, collection)
     }
   })
 }

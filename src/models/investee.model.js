@@ -37,6 +37,6 @@ const InvesteeModel = model('Investee', InvesteeSchema)
 
 const changeStream = InvesteeModel.watch({ fullDocumentBeforeChange: 'required' })
 
-createChangeLog(changeStream, config.changeLogs.prefixes.investees)
+createChangeLog(changeStream, config.changeLogs.prefixes.investees, InvesteeModel)
 
 export default  InvesteeModel

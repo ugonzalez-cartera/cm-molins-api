@@ -37,6 +37,6 @@ const SysuserModel = model('Sysuser', SysuserSchema)
 
 const changeStream = SysuserModel.watch({ fullDocumentBeforeChange: 'required' })
 
-createChangeLog(changeStream, config.changeLogs.prefixes.sysuser)
+createChangeLog(changeStream, config.changeLogs.prefixes.sysuser, SysuserModel)
 
 export default SysuserModel
