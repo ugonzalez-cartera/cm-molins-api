@@ -43,6 +43,15 @@ const config = {
   // Password
   // Minimum eight characters, at least one uppercase letter, one lowercase letter and one number:
   strongPassword: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/,
+  // Change logs
+  changeLogs: {
+    prefixes: {
+      sysuser: 'sysuser_',
+      counselor: 'counselor_',
+      investees: 'investestee_',
+      council: 'council_',
+    }
+  },
 }
 
 export default config

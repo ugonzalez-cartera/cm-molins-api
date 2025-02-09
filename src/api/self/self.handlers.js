@@ -30,15 +30,15 @@ export async function getOwnUser (req, reply) {
 // --------------------
 export async function updateOwnUser (req, reply) {
   const { id: userId } = req.user
-  const { givenName, familyName, email } = req.body
+  const { givenName, familyName, email, isNotActive } = req.body
 
   try {
-    let prefix = 'sys_'
+    let prefix = config.changeLogs.prefixes.sysuser
 
     let user = await Sysusers.findOne({ _id: userId })
     if (!user) {
       user = await Counselors.findOne({ _id: userId })
-      prefix = 'coun_'
+      prefix = config.changeLogs.prefixes.counselor
     }
 
     if (!user) return reply.notFound('User not found.')
@@ -47,6 +47,12 @@ export async function updateOwnUser (req, reply) {
     user.familyName = familyName
     user.email = email
     user.updatedBy = userId
+
+    if (isNotActive) {
+      const isUserNotActive = isNotActive === 'true' ? true : false
+      user.isNotActive = isUserNotActive
+    }
+
 
     await user.save()
 

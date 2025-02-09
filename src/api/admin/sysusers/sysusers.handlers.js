@@ -13,6 +13,7 @@ const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
 export async function createSysuser (req, reply) {
+  const { id: userId } = req.user
   const { origin } = req.headers
   const { email, givenName, familyName } = req.body
   if (!email) return reply.badRequest('Email and password are required.')
@@ -25,7 +26,8 @@ export async function createSysuser (req, reply) {
     givenName,
     familyName,
     country: 'es',
-    role: 'admin'
+    role: 'admin',
+    updatedBy: userId,
   })
 
   await user.validate()

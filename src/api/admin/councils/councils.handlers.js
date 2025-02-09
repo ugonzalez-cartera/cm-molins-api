@@ -8,11 +8,13 @@ import dayjs from 'dayjs'
 
 const Councils = mongoose.model('Council')
 const Counselors = mongoose.model('Counselor')
+const ChangeLogs = mongoose.model('ChangeLog')
 
 import { sendNotificationEmail } from '../../../services/utils.service.js'
 
 // --------------------
 export async function createCouncil (req, reply) {
+  const {  id: userId } = req.user
   const additionalDocs = []
   let reportFile = {}
   let filesToUpload = 0
@@ -86,6 +88,7 @@ export async function createCouncil (req, reply) {
       })
     }
 
+    newCouncil.updatedBy = userId
 
     await newCouncil.save()
 
@@ -106,7 +109,10 @@ export async function deleteCouncilYear (req, reply) {
   const { councilYear } = req.params
 
   try {
-    await Councils.deleteMany({ year: Number(councilYear) })
+    await Promise.all([
+      Councils.deleteMany({ year: Number(councilYear) }),
+      ChangeLogs.deleteMany({ _id: `` }),
+    ])
 
     return { msg: 'OK' }
   } catch (err) {

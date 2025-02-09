@@ -38,6 +38,6 @@ const CounselorModel = model('Counselor', CounselorSchema)
 
 const changeStream = CounselorModel.watch({ fullDocumentBeforeChange: 'required' })
 
-createChangeLog(changeStream, 'couns')
+createChangeLog(changeStream, config.changeLogs.prefixes.counselor)
 
 export default CounselorModel

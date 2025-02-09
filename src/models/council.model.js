@@ -56,6 +56,6 @@ const CouncilModel = model('Council', CouncilSchema)
 
 const changeStream = CouncilModel.watch({ fullDocumentBeforeChange: 'required' })
 
-createChangeLog(changeStream, 'counc')
+createChangeLog(changeStream, config.changeLogs.prefixes.council)
 
 export default CouncilModel

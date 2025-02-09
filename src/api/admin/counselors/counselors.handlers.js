@@ -13,6 +13,7 @@ const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
 export async function createCounselor (req, reply) {
+  const { id: userId } = req.user
   const { origin } = req.headers
 
   const { email, givenName, familyName } = req.body
@@ -26,6 +27,7 @@ export async function createCounselor (req, reply) {
     givenName,
     familyName,
     country: 'es',
+    updatedBy: userId,
   })
 
   await counselor.validate()
