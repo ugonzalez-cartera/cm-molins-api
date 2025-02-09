@@ -11,8 +11,11 @@ export async function getChangelogs (req, reply) {
 
   if (!changeLogs) return reply.notFound('Changelog not found.')
 
+  // Sort changes by updatedAt field in descending order.
+  const sortedChanges = changeLogs.changes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+
   return {
-    docs: changeLogs.changes || [],
-    changesCount:  changeLogs.changes.length || 0,
+    docs: sortedChanges || [],
+    changesCount: changeLogs.changes.length || 0,
   }
 }
