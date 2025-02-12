@@ -178,6 +178,21 @@ export async function updateCouncil (req, reply) {
 }
 
 // --------------------
+export async function deleteCouncilReport (req, reply) {
+  const { councilId } = req.params
+
+  try {
+
+    await Councils.findOneAndUpdate({ _id: councilId }, { $unset: { report: 0 } })
+
+    return 'OK'
+  } catch (err) {
+    console.error(' !! Could not delete council report.', err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
 export async function updateCouncilReport (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params

@@ -52,6 +52,8 @@ export async function fetchInvesteeById (req, reply) {
 
 // --------------------
 export async function createInvestee (req, reply) {
+  const { id: userId } = req.user
+
   try {
     const file = await req.file()
 
@@ -81,7 +83,7 @@ export async function createInvestee (req, reply) {
       description,
     })
 
-    await investee.save()
+    await investee.save({ updatedBy: userId })
 
     return investee
 
@@ -117,7 +119,7 @@ export async function updateInvesteeImage (req, reply) {
       investee.publicId = uploadImageResult.public_id
     }
 
-    investee.updatedBy = userId
+    await investee.save({ updatedBy: userId })
 
 
     return investee
@@ -146,7 +148,7 @@ export async function updateInvestee (req, reply) {
     investee.description = description
     investee.updatedBy = userId
 
-    await investee.save()
+    await investee.save({ updatedBy: userId })
 
     return investee
 

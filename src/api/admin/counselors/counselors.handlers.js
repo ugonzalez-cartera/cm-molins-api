@@ -24,7 +24,6 @@ export async function createCounselor (req, reply) {
   const isExistingCounselor = await Counselors.exists({ email })
   const isExistingSysuser = await Sysusers.exists({ email })
 
-  console.info('isExistingCounselor:', isExistingCounselor, 'isExistingSysuser:', isExistingSysuser)
   if (isExistingCounselor || isExistingSysuser) return reply.conflict('Counselor already exists.')
 
   const counselor = new Counselors({

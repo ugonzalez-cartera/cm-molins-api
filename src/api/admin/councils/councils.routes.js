@@ -7,7 +7,8 @@ import {
   createCouncilDocs,
   deleteCouncilDoc,
   createCouncilCall,
-  getAvailableCallCouncils
+  getAvailableCallCouncils,
+  deleteCouncilReport,
 } from './councils.handlers.js'
 
 import { configAllowance } from '../../../services/authorization.service.js'
@@ -22,6 +23,7 @@ async function routes (fastify, opts) {
   fastify.delete('/:councilId', { ...opts }, deleteCouncil)
   fastify.put('/:councilId', { ...opts }, updateCouncil)
   fastify.put('/:councilId/report', { ...opts }, updateCouncilReport)
+  fastify.delete('/:councilId/report', { ...opts }, deleteCouncilReport)
   fastify.post('/:councilId/docs', { ...opts }, createCouncilDocs)
   fastify.delete('/:councilId/docs/:docId', { ...opts }, deleteCouncilDoc)
   fastify.get('/call', { ...opts }, getAvailableCallCouncils)
