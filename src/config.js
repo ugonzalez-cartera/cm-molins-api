@@ -46,11 +46,13 @@ const config = {
   // Change logs
   changeLogs: {
     prefixes: {
-      sysuser: 'sysuser_',
-      counselor: 'counselor_',
+      sysusers: 'sysuser_',
+      counselors: 'counselor_',
       investees: 'investee_',
-      council: 'council_',
-    }
+      councils: 'council_',
+      default: 'SYSTEM',
+    },
+    maxLogItems: 200,
   },
 }
 

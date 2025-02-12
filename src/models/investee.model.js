@@ -4,7 +4,7 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
-import {  createChangeLog } from '../services/utils.service.js'
+import { changeLogPlugin } from '../changeLogPlugin.js'
 
 const { model, Schema, connection } = mongoose
 
@@ -33,10 +33,6 @@ const InvesteeSchema = new Schema({
   timestamps: true,
 })
 
-const InvesteeModel = model('Investee', InvesteeSchema)
+InvesteeSchema.plugin(changeLogPlugin)
 
-const changeStream = InvesteeModel.watch({ fullDocumentBeforeChange: 'required' })
-
-createChangeLog(changeStream, config.changeLogs.prefixes.investees, InvesteeModel)
-
-export default  InvesteeModel
+export default  model('Investee', InvesteeSchema)

@@ -4,7 +4,7 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
-import { createChangeLog } from '../services/utils.service.js'
+import { changeLogPlugin } from '../changeLogPlugin.js'
 
 const { model, Schema, connection } = mongoose
 
@@ -34,10 +34,6 @@ const CounselorSchema = new Schema({
   toObject: { versionKey: false },
   })
 
-const CounselorModel = model('Counselor', CounselorSchema)
+CounselorSchema.plugin(changeLogPlugin)
 
-const changeStream = CounselorModel.watch({ fullDocumentBeforeChange: 'required' })
-
-createChangeLog(changeStream, config.changeLogs.prefixes.counselor, CounselorModel)
-
-export default CounselorModel
+export default model('Counselor', CounselorSchema)

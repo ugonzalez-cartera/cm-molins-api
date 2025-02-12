@@ -8,10 +8,6 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
-import { getChangeLogChanges } from '../utils.js'
-
-import ChangeLogs from '../models/0_changelog.model.js'
-
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -111,57 +107,4 @@ export async function deleteFile (publicId) {
 // --------------------
 export function arraysOverlap (arr1, arr2) {
   return arr1.some((item) => arr2.includes(item))
-}
-
-// --------------------
-export async function createChangeLog (stream, prefix, collection) {
-  let resumeToken
-  let currentStream = stream
-
-  currentStream.on('change', async next => {
-    if (next.operationType === 'delete') return
-
-    const oldData = next.fullDocumentBeforeChange
-    const newData = next.updateDescription?.updatedFields || {}
-
-    try {
-      const changes = getChangeLogChanges(oldData, newData)
-
-      for (const change of changes) {
-        const data = {
-          key: change.key,
-          old: change.old,
-          new: change.new,
-          updatedBy: oldData.updatedBy,
-        }
-
-        await ChangeLogs.updateOne(
-          { _id: `${prefix}${oldData._id}` },
-          {
-            $push: { changes: data },
-          },
-          { upsert: true },
-        )
-
-        resumeToken = next._id
-
-        stream.close()
-      }
-    } catch (err) {
-      console.error(' !! Could not create changelog', err)
-    }
-  })
-
-  currentStream.on('error', err => {
-    console.error(' !! Change stream error', err)
-    if (resumeToken) {
-      currentStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
-    }
-  })
-
-  currentStream.on('close', () => {
-    if (resumeToken) {
-      currentStream = collection.watch({ resumeAfter: resumeToken, fullDocumentBeforeChange: 'required' })
-    }
-  })
 }

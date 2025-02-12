@@ -54,7 +54,7 @@ export async function updateOwnUser (req, reply) {
     }
 
 
-    await user.save()
+    await user.save({ updatedBy: userId })
 
     return user
   } catch (err) {

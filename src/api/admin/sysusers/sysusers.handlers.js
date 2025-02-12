@@ -128,11 +128,14 @@ export async function updateSysuser (req, reply) {
     familyName,
     email,
     isNotActive,
-    updatedBy: userId,
   }
 
   try {
-    const sysuser = await Sysusers.findOneAndUpdate({ _id: sysuserId }, { $set: newData }, { new: true })
+    const sysuser = await Sysusers.findOneAndUpdate(
+      { _id: sysuserId },
+      { $set: newData },
+      { new: true, updatedBy: userId, },
+    )
     if (!sysuser) return reply.notFound('Sysuser not found.')
 
 

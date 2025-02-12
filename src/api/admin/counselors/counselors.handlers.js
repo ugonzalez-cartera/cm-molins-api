@@ -139,11 +139,14 @@ export async function updateCounselor (req, reply) {
     familyName,
     email,
     isNotActive,
-    updatedBy: userId,
   }
 
   try {
-    const counselor = await Counselors.findOneAndUpdate({ _id: counselorId }, { $set: newData }, { new: true })
+    const counselor = await Counselors.findOneAndUpdate(
+      { _id: counselorId },
+      { $set: newData },
+      { new: true, updatedBy: userId },
+    )
     if (!counselor) return reply.notFound('Counselor not found.')
 
     return counselor

@@ -96,7 +96,7 @@ export async function createCouncil (req, reply) {
 
     newCouncil.updatedBy = userId
 
-    await newCouncil.save()
+    await newCouncil.save({ updatedBy: userId })
 
     return newCouncil
   } catch (err) {
@@ -159,13 +159,13 @@ export async function updateCouncil (req, reply) {
   const { councilId } = req.params
   const { agenda, minutes } = req.body || {}
 
-  const update = { agenda, minutes, updatedBy: userId }
+  const update = { agenda, minutes }
 
   try {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
       { $set: update },
-      { new: true }
+      { new: true, updatedBy: userId }
     )
 
     if (!council) return reply.notFound('Council not found.')
@@ -206,9 +206,13 @@ export async function updateCouncilReport (req, reply) {
       }
     }
 
-    await Councils.updateOne({ _id: councilId }, { $set: { report: reportFile, updatedBy: userId } })
+    await Councils.updateOne(
+      { _id: councilId },
+      { $set: { report: reportFile } },
+      { updatedBy: userId }
+    )
   } catch (err) {
-    console.error(' !! Could not update council report', err)
+    console.error(' !! Could not update council report.', err)
     if (err.http_code) {
       const error = this.httpErrors.badRequest('Invalid format.')
       error.code = err.http_code
@@ -221,6 +225,7 @@ export async function updateCouncilReport (req, reply) {
 
 // --------------------
 export async function deleteCouncilDoc (req, reply) {
+  const {  id: userId } = req.user
   const { councilId, docId } = req.params
 
   const decodedDocId = decodeURIComponent(docId)
@@ -229,7 +234,7 @@ export async function deleteCouncilDoc (req, reply) {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
       { $pull: { docs: { publicId: decodedDocId } } },
-      { new: true }
+      { new: true, updatedBy: userId },
     )
 
 
@@ -247,6 +252,7 @@ export async function deleteCouncilDoc (req, reply) {
 
 // --------------------
 export async function createCouncilDocs (req, reply) {
+  const { id: userId } = req.user
   const { councilId } = req.params
 
   const additionalDocs = []
@@ -280,7 +286,8 @@ export async function createCouncilDocs (req, reply) {
 
     await Councils.updateOne(
       { _id: councilId },
-      { $push: { docs: { $each: additionalDocs } } }
+      { $push: { docs: { $each: additionalDocs } } },
+      { updatedBy: userId }
     )
   } catch (err) {
     console.error(' !! Could not create council doc', err)
@@ -304,6 +311,7 @@ export async function getAvailableCallCouncils (req, reply) {
 
 // --------------------
 export async function createCouncilCall (req, reply) {
+  const { id: userId } = req.user
   const { councilId } = req.params
   const callData = req.body
 
@@ -313,7 +321,7 @@ export async function createCouncilCall (req, reply) {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
       { $set: { call: callData } },
-      { new: true },
+      { new: true, updatedBy: userId },
     )
 
     if (!council) return reply.notFound('Council not found.')

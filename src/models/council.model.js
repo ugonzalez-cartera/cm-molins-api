@@ -4,7 +4,7 @@ import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
-import { createChangeLog } from '../services/utils.service.js'
+import { changeLogPlugin } from '../changeLogPlugin.js'
 
 const { model, Schema, connection } = mongoose
 
@@ -52,10 +52,15 @@ const CouncilSchema = new Schema({
 },
 )
 
-const CouncilModel = model('Council', CouncilSchema)
+if (!CouncilSchema.options.toJSON) {
+  CouncilSchema.options.toJSON = {}
+}
 
-const changeStream = CouncilModel.watch({ fullDocumentBeforeChange: 'required' })
+CouncilSchema.options.toJSON.transform = function (doc, ret) {
+  delete ret.__v
+}
 
-createChangeLog(changeStream, config.changeLogs.prefixes.council, CouncilModel)
 
-export default CouncilModel
+CouncilSchema.plugin(changeLogPlugin)
+
+export default model('Council', CouncilSchema)

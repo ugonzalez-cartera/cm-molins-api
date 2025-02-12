@@ -147,7 +147,11 @@ export async function requestResetPassword (req, reply) {
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: '6 hours' })
 
-    const userMeta = await UsersMetadata.findOneAndUpdate({ _id: user._id }, { $set: { verificationToken: token } }, { new: true })
+    const userMeta = await UsersMetadata.findOneAndUpdate(
+      { _id: user._id },
+      { $set: { verificationToken: token } },
+      { new: true }
+    )
 
     // Only send email if userMeta was found.
     if (userMeta) {
