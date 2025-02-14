@@ -38,6 +38,7 @@ const CouncilSchema = new Schema({
   call: { type: CallSchema },
   year: {  type: Number, required: true },
   month: { type: Number, required: true },
+  fullDate: { type: Date, required: true },
   report: { type: FileSchema },
   docs: { type: [FileSchema], default: [] },
   updatedBy: { type: String },

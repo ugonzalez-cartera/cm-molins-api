@@ -19,7 +19,7 @@ export async function createCouncil (req, reply) {
   let reportFile = {}
   let filesToUpload = 0
 
-  let month, year, agenda
+  let month, year, agenda, fullDate
 
   let newCouncil
 
@@ -41,6 +41,7 @@ export async function createCouncil (req, reply) {
         agenda = councilAgenda
         month = dayjs(date).month()
         year = dayjs(date).year()
+        fullDate = dayjs(date).toISOString()
 
         const isExistingCouncil = await Councils.findOne({ year, month })
         if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -72,6 +73,7 @@ export async function createCouncil (req, reply) {
       newCouncil = new Councils({
         year,
         month,
+        fullDate,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
@@ -83,6 +85,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
+      fullDate = dayjs(date).toISOString()
 
       const isExistingCouncil = await Councils.exists({ year, month })
       if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -90,6 +93,7 @@ export async function createCouncil (req, reply) {
       newCouncil = new Councils({
         year,
         month,
+        fullDate,
         agenda: parsedAgenda,
       })
     }
@@ -350,12 +354,18 @@ export async function createCouncilCall (req, reply) {
     }
 
     const hasAttachment = council.docs.length > 0 || !!council.report
+    const hasAttachedDocs = council.docs.length > 0
+    const hasAttachedReport = !!council.report
     if (hasAttachment) {
-      emailData.attachment = [
+      emailData.attachment = []
+
+      if (hasAttachedDocs) {
         // Add .jpg extension to publicId as public id has the original extension.
-        ...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId + '.jpg' })),
-        { url: council.report?.secureUrl, name: council.report?.publicId + '.jpg' },
-      ]
+        emailData.attachment.push(...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId + '.jpg' })))
+      }
+      if (hasAttachedReport) {
+        emailData.attachment.push({ url: council.report.secureUrl, name: council.report.publicId + '.jpg' })
+      }
     }
 
     const counselors = await Counselors.find({ isNotActive: { $ne: true } }).lean()

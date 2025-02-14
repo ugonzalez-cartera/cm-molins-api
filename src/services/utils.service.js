@@ -1,6 +1,5 @@
 'use strict'
 
-import mongoose from 'mongoose'
 import axios from 'axios'
 import streamifier from 'streamifier'
 import { v2 as cloudinary } from 'cloudinary'
@@ -23,7 +22,7 @@ const allChars = numbers + alpha + upperCaseAlpha + specialChars
 const newPassword = customAlphabet(allChars, 12)
 
 // --------------------
-export async function sendNotificationEmail (emailData, options = { isNoReply: false, template: 'default' }) {
+export async function sendNotificationEmail (emailData) {
   // If this is a test email, don't send it.
   const dummyDomains = ['test.com', 'prueba.com']
   if (dummyDomains.includes(emailData.email.split('@')[1])) {
