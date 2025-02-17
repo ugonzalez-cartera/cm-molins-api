@@ -316,10 +316,8 @@ export async function createCouncilDocs (req, reply) {
 
 // --------------------
 export async function getAvailableCallCouncils (req, reply) {
-  const currentMonth = dayjs().month()
-  const currentYear = dayjs().year()
   try {
-    const councils = await Councils.find({ month: { $gte: currentMonth }, year: currentYear }).lean()
+    const councils = await Councils.find({ fullDate: { $gte: dayjs().toISOString() } }).lean()
 
     return councils
   } catch (err) {

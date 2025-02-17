@@ -12,10 +12,9 @@ export async function getCouncils (req, reply) {
 
   try {
     if (coming) {
-      const currentYear = dayjs().year()
-      const currentMonth = dayjs().month()
 
-      const comingCouncils = await Councils.findOne({ year: currentYear, month: { $gte: currentMonth } }).lean()
+      const comingCouncils = await Councils.findOne({ fullDate: { $gte: dayjs().toISOString() } }).lean()
+      if (!comingCouncils) return reply.notFound('No coming council found.')
 
       return {
         docs: [comingCouncils],

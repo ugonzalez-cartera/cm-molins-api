@@ -41,7 +41,6 @@ const CouncilSchema = new Schema({
   fullDate: { type: Date, required: true },
   report: { type: FileSchema },
   docs: { type: [FileSchema], default: [] },
-  updatedBy: { type: String },
 },
 {
   collection: 'councils',

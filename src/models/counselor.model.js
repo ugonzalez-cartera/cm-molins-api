@@ -21,7 +21,6 @@ const CounselorSchema = new Schema({
   role: { type: Array, default: ['counselor'] },
   isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
-  updatedBy: { type: String },
 },
 {
   collection: 'counselors',

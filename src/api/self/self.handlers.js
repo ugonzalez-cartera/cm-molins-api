@@ -33,12 +33,9 @@ export async function updateOwnUser (req, reply) {
   const { givenName, familyName, email, isNotActive } = req.body
 
   try {
-    let prefix = config.changeLogs.prefixes.sysuser
-
     let user = await Sysusers.findOne({ _id: userId })
     if (!user) {
       user = await Counselors.findOne({ _id: userId })
-      prefix = config.changeLogs.prefixes.counselor
     }
 
     if (!user) return reply.notFound('User not found.')

@@ -27,7 +27,6 @@ const InvesteeSchema = new Schema({
     en: { type: String, required: true },
     ca: { type: String, required: true },
   },
-  updatedBy: { type: String },
 },
 {
   timestamps: true,

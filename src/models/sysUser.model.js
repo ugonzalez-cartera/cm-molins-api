@@ -20,7 +20,6 @@ const SysuserSchema = new Schema({
   role: { type: Array, required: true },
   isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
-  updatedBy: { type: String },
 },
 {
   collection: 'sysusers',
