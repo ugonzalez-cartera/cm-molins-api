@@ -19,7 +19,7 @@ export async function createCouncil (req, reply) {
   let reportFile = {}
   let filesToUpload = 0
 
-  let month, year, agenda, fullDate
+  let month, year, agenda, newDate
 
   let newCouncil
 
@@ -41,7 +41,7 @@ export async function createCouncil (req, reply) {
         agenda = councilAgenda
         month = dayjs(date).month()
         year = dayjs(date).year()
-        fullDate = dayjs(date).toISOString()
+        newDate = dayjs(date).toISOString()
 
         const isExistingCouncil = await Councils.findOne({ year, month })
         if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -73,7 +73,7 @@ export async function createCouncil (req, reply) {
       newCouncil = new Councils({
         year,
         month,
-        fullDate,
+        date: newDate,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
         agenda: parsedAgenda,
@@ -85,7 +85,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
-      fullDate = dayjs(date).toISOString()
+      newDate = dayjs(date).toISOString()
 
       const isExistingCouncil = await Councils.exists({ year, month })
       if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -93,7 +93,7 @@ export async function createCouncil (req, reply) {
       newCouncil = new Councils({
         year,
         month,
-        fullDate,
+        date: newDate,
         agenda: parsedAgenda,
       })
     }
@@ -161,9 +161,9 @@ export async function deleteCouncil (req, reply) {
 export async function updateCouncil (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params
-  const { agenda, minutes } = req.body || {}
+  const { agenda, minutes, date } = req.body || {}
 
-  const update = { agenda, minutes }
+  const update = { agenda, minutes, date }
 
   try {
     const council = await Councils.findOneAndUpdate(
@@ -317,7 +317,7 @@ export async function createCouncilDocs (req, reply) {
 // --------------------
 export async function getAvailableCallCouncils (req, reply) {
   try {
-    const councils = await Councils.find({ fullDate: { $gte: dayjs().toISOString() } }).lean()
+    const councils = await Councils.find({ date: { $gte: dayjs().toISOString() } }).lean()
 
     return councils
   } catch (err) {
@@ -348,7 +348,7 @@ export async function createCouncilCall (req, reply) {
       description: council.call.description,
       body: council.agenda,
       title: council.call.title,
-      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.call.date).format('DD/MM/YYYY')}`,
+      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.date).format('DD/MM/YYYY')}`,
     }
 
     const hasAttachment = council.docs.length > 0 || !!council.report

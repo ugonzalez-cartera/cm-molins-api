@@ -13,7 +13,7 @@ export async function getCouncils (req, reply) {
   try {
     if (coming) {
 
-      const comingCouncils = await Councils.findOne({ fullDate: { $gte: dayjs().toISOString() } }).lean()
+      const comingCouncils = await Councils.findOne({ date: { $gte: dayjs().toISOString() } }).lean()
       if (!comingCouncils) return reply.notFound('No coming council found.')
 
       return {
