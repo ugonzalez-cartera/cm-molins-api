@@ -317,7 +317,7 @@ export async function createCouncilDocs (req, reply) {
 // --------------------
 export async function getAvailableCallCouncils (req, reply) {
   try {
-    const councils = await Councils.find({ date: { $gt: dayjs().toISOString() } }).lean()
+    const councils = await Councils.find({ date: { $gt: dayjs().startOf('day').toISOString() } }).lean()
 
     return councils
   } catch (err) {
