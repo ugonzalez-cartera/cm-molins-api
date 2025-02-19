@@ -12,13 +12,11 @@ export async function getCouncils (req, reply) {
 
   try {
     if (coming) {
-
-      const comingCouncils = await Councils.findOne({ date: { $gte: dayjs().toISOString() } }).lean()
-      if (!comingCouncils) return reply.notFound('No coming council found.')
+      const comingCouncils = await Councils.findOne({ date: { $gt: dayjs().toISOString() } }).lean()
 
       return {
-        docs: [comingCouncils],
-        docsCount: comingCouncils.length,
+        docs: comingCouncils ? [comingCouncils] : [],
+        docsCount: comingCouncils?.length ?? 0,
       }
     } else {
       const result = await Councils.aggregate([

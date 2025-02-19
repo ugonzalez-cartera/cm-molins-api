@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import {  uploadFile, deleteFile, deleteFolder } from '../../../services/utils.service.js'
+import {  uploadFile, deleteFile, deleteResourcesByPrefix, deleteFolder } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 
@@ -11,6 +11,8 @@ const Counselors = mongoose.model('Counselor')
 const ChangeLogs = mongoose.model('ChangeLog')
 
 import { sendNotificationEmail } from '../../../services/utils.service.js'
+
+const currentEnv = process.env.NODE_ENV
 
 // --------------------
 export async function createCouncil (req, reply) {
@@ -49,7 +51,7 @@ export async function createCouncil (req, reply) {
         const buffer = await part.toBuffer()
         const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
 
-        const folder = `carteracm/councils/${month}-${year}/${dir}`
+        const folder = `${currentEnv}-carteracm/councils/${month}-${year}/${dir}`
         const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
 
@@ -127,16 +129,10 @@ export async function deleteCouncilYear (req, reply) {
         Councils.deleteOne({ year: Number(councilYear) }),
       ])
 
-      if (council.report) {
-        deleteFile(council.report?.publicId)
-      }
-
-      if (!!council.docs.length) {
-        council.docs?.map(doc => deleteFile(doc.publicId))
-      }
-
-      deleteFolder(`carteracm/councils/${council.month}-${council.year}`)
+      await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+      await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
     }
+
 
     return { msg: 'OK' }
   } catch (err) {
@@ -150,17 +146,10 @@ export async function deleteCouncil (req, reply) {
   const { councilId } = req.params
 
   try {
-    const council = await Councils.findOneAndDelete({ _id: councilId })
+    const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
 
-    if (council.report) {
-      deleteFile(council.report?.publicId)
-    }
-
-    if (!!council.docs.length) {
-      council.docs?.map(doc => deleteFile(doc.publicId))
-    }
-
-    deleteFolder(`carteracm/councils/${council.month}-${council.year}`)
+    await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+    await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
 
     return 'OK'
   } catch (err) {
@@ -202,7 +191,7 @@ export async function deleteCouncilReport (req, reply) {
     const council = await Councils.findOneAndUpdate({ _id: councilId }, { $unset: { report: 0 } })
 
     if (council.report?.publicId) {
-      await deleteFile(council.report.publicId)
+      deleteFile(council.report.publicId)
     }
 
     return 'OK'
@@ -229,7 +218,7 @@ export async function updateCouncilReport (req, reply) {
 
       const buffer = await file.fields.councilReportFile.toBuffer()
 
-      const folder = `carteracm/councils/${council.month}-${council.year}/reports`
+      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/reports`
       uploadedFile = await uploadFile(buffer, folder, councilReportFile.filename)
 
       if (council.report?.publicId) {
@@ -279,7 +268,7 @@ export async function deleteCouncilDoc (req, reply) {
 
     if (!council) return reply.notFound('Council not found.')
 
-    await deleteFile(decodedDocId)
+    deleteFile(decodedDocId)
 
     return 'OK'
 
@@ -314,7 +303,7 @@ export async function createCouncilDocs (req, reply) {
 
       const buffer = await part.toBuffer()
 
-      const folder = `carteracm/councils/${council.month}-${council.year}/additional-docs`
+      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/additional-docs`
       const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
       additionalDocs.push({

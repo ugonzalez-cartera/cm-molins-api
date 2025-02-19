@@ -15,7 +15,7 @@ connection.db.command({ collMod: 'investees', changeStreamPreAndPostImages: { en
 const InvesteeSchema = new Schema({
   _id: { type: String, default: () => newId() },
   name: { type: String, required: true },
-  type: { type: String, enum: ['startup', 'industry', 'realState', 'finance', 'ventureCapital'], required: true },
+  type: { type: String, enum: ['industry', 'realState', 'finance', 'ventureCapital'], required: true },
   investedAt: { type: Date },
   disinvestedAt: { type: Date },
   websiteUrl: { type: String },

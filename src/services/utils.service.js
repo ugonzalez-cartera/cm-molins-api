@@ -111,6 +111,13 @@ export async function deleteFolder (folder) {
 }
 
 // --------------------
+export async function deleteResourcesByPrefix (prefix) {
+  const result = await cloudinary.api.delete_resources_by_prefix(prefix)
+
+  return result
+}
+
+// --------------------
 export function arraysOverlap (arr1, arr2) {
   return arr1.some((item) => arr2.includes(item))
 }
