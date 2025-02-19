@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import {  uploadFile, deleteFile } from '../../../services/utils.service.js'
+import {  uploadFile, deleteFile, deleteFolder } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 
@@ -134,6 +134,8 @@ export async function deleteCouncilYear (req, reply) {
       if (!!council.docs.length) {
         council.docs?.map(doc => deleteFile(doc.publicId))
       }
+
+      deleteFolder(`carteracm/councils/${council.month}-${council.year}`)
     }
 
     return { msg: 'OK' }
@@ -148,7 +150,17 @@ export async function deleteCouncil (req, reply) {
   const { councilId } = req.params
 
   try {
-    await Councils.deleteOne({ _id: councilId })
+    const council = await Councils.findOneAndDelete({ _id: councilId })
+
+    if (council.report) {
+      deleteFile(council.report?.publicId)
+    }
+
+    if (!!council.docs.length) {
+      council.docs?.map(doc => deleteFile(doc.publicId))
+    }
+
+    deleteFolder(`carteracm/councils/${council.month}-${council.year}`)
 
     return 'OK'
   } catch (err) {
@@ -187,7 +199,11 @@ export async function deleteCouncilReport (req, reply) {
 
   try {
 
-    await Councils.findOneAndUpdate({ _id: councilId }, { $unset: { report: 0 } })
+    const council = await Councils.findOneAndUpdate({ _id: councilId }, { $unset: { report: 0 } })
+
+    if (council.report?.publicId) {
+      await deleteFile(council.report.publicId)
+    }
 
     return 'OK'
   } catch (err) {
@@ -213,8 +229,12 @@ export async function updateCouncilReport (req, reply) {
 
       const buffer = await file.fields.councilReportFile.toBuffer()
 
-      const folder = `carteracm/councils/${councilId}/reports`
+      const folder = `carteracm/councils/${council.month}-${council.year}/reports`
       uploadedFile = await uploadFile(buffer, folder, councilReportFile.filename)
+
+      if (council.report?.publicId) {
+        deleteFile(council.report.publicId)
+      }
     }
 
     let reportFile
@@ -294,7 +314,7 @@ export async function createCouncilDocs (req, reply) {
 
       const buffer = await part.toBuffer()
 
-      const folder = `carteracm/councils/${council.year}/${councilId}/additional-docs`
+      const folder = `carteracm/councils/${council.month}-${council.year}/additional-docs`
       const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
       additionalDocs.push({

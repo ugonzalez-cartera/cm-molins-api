@@ -112,6 +112,8 @@ export async function updateInvesteeImage (req, reply) {
 
       const folder = 'carteracm/investees'
       uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
+
+      await deleteFile(investee.publicId)
     }
 
     if (uploadImageResult) {

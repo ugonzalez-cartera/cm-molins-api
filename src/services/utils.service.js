@@ -104,6 +104,13 @@ export async function deleteFile (publicId) {
 }
 
 // --------------------
+export async function deleteFolder (folder) {
+  const result = await cloudinary.api.delete_folder(folder)
+
+  return result
+}
+
+// --------------------
 export function arraysOverlap (arr1, arr2) {
   return arr1.some((item) => arr2.includes(item))
 }
