@@ -7,6 +7,8 @@ import { uploadFile, deleteFile } from '../../services/utils.service.js'
 const Investees = mongoose.model('Investee')
 const ChangeLogs = mongoose.model('ChangeLog')
 
+const currentEnv = process.env.NODE_ENV
+
 // --------------------
 export async function getInvestees (req, reply) {
   try {
@@ -68,7 +70,7 @@ export async function createInvestee (req, reply) {
 
     const buffer = await file.fields.investeeFile.toBuffer()
 
-    const folder = 'carteracm/investees'
+    const folder = `${currentEnv}-carteracm/investees`
     const uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
 
     const investee = new Investees({
@@ -110,7 +112,7 @@ export async function updateInvesteeImage (req, reply) {
 
       const buffer = await file.fields.investeeFile.toBuffer()
 
-      const folder = 'carteracm/investees'
+      const folder = `${currentEnv}-carteracm/investees`
       uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
 
       await deleteFile(investee.publicId)
