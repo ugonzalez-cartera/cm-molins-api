@@ -9,7 +9,7 @@
     "start": "node index.js",
     "dev": "node --env-file=.env --watch index.js | pino-colada"
   },
-  "author": "Unai Gonzále Escalante",
+  "author": "Unai González Escalante",
   "license": "ISC",
   "devDependencies": {
     "nodemon": "^3.1.9",

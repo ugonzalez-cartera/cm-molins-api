@@ -129,8 +129,10 @@ export async function deleteCouncilYear (req, reply) {
         Councils.deleteOne({ year: Number(councilYear) }),
       ])
 
-      await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
-      await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      if (council.report?.publicId || council.docs.length > 0) {
+        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      }
     }
 
 
@@ -148,8 +150,10 @@ export async function deleteCouncil (req, reply) {
   try {
     const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
 
-    await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
-    await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+    if (council.report?.publicId || council.docs.length > 0) {
+      await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+      await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+    }
 
     return 'OK'
   } catch (err) {
