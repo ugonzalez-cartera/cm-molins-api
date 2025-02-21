@@ -12,7 +12,7 @@ const currentEnv = process.env.NODE_ENV
 // --------------------
 export async function getInvestees (req, reply) {
   try {
-    const { page, type, name, limit, sort } = req.query
+    const { page, type, limit, sort, term } = req.query
 
     const filter = {}
     const skip = (Number(limit) * Number(page)) - Number(limit)
@@ -21,9 +21,10 @@ export async function getInvestees (req, reply) {
       filter.type = { $in: type.split(',') }
     }
 
-    if (name) {
-      filter.name = { $in: name.split(',') }
+    if (term) {
+      filter.name = { $regex: new RegExp(`^${term}`, 'i') }
     }
+
 
     const [docs, docCount] = await Promise.all([
       Investees.find(filter).skip(skip).limit(limit).sort(sort).lean(),

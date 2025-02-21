@@ -6,10 +6,8 @@ import config from '../config.js'
 
 import { changeLogPlugin } from '../changeLogPlugin.js'
 
-const { model, Schema, connection } = mongoose
+const { model, Schema } = mongoose
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
-
-connection.db.command({ collMod: 'sysusers', changeStreamPreAndPostImages: { enabled: true } })
 
 const SysuserSchema = new Schema({
   _id: { type: String, default: () => newId() },
