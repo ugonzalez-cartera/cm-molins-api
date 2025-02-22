@@ -150,6 +150,7 @@ export async function deleteCouncil (req, reply) {
   try {
     const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
 
+    console.info(council, 'council')
     if (council.report?.publicId || council.docs.length > 0) {
       await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
       await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
