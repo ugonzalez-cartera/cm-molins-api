@@ -174,6 +174,10 @@ export async function updateCouncil (req, reply) {
   const update = { agenda, minutes, date, year, month }
 
   try {
+    const isExistingCouncil = await Councils.findOne({ month })
+    if (isExistingCouncil) return reply.conflict('Council already exists.')
+
+    console.info('update', isExistingCouncil)
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
       { $set: update },
