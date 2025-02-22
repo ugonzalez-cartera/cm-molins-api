@@ -126,7 +126,7 @@ export async function deleteCouncilYear (req, reply) {
     for (const council of councils) {
       await Promise.all([
         ChangeLogs.deleteOne({ _id: `council_${council._id}` }),
-        Councils.deleteOne({ year: Number(councilYear) }),
+        Councils.deleteOne({ _id: council._id }),
       ])
 
       if (council.report?.publicId || council.docs.length > 0) {
