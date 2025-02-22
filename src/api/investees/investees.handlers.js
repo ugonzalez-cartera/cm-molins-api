@@ -22,7 +22,7 @@ export async function getInvestees (req, reply) {
     }
 
     if (term) {
-      filter.name = { $regex: new RegExp(`^${term}`, 'i') }
+      filter.name = { $regex: new RegExp(`${term}`, 'i') }
     }
 
 
