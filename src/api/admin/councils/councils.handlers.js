@@ -168,7 +168,9 @@ export async function updateCouncil (req, reply) {
   const { councilId } = req.params
   const { agenda, minutes, date } = req.body || {}
 
-  const update = { agenda, minutes, date }
+  const year = dayjs(date).year()
+  const month = dayjs(date).month()
+  const update = { agenda, minutes, date, year, month }
 
   try {
     const council = await Councils.findOneAndUpdate(
