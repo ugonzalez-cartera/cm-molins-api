@@ -168,7 +168,7 @@ export async function deleteInvestee (req, reply) {
 
     const result = await Promise.all([
       Investees.findOneAndDelete({ _id: investeeId }),
-      ChangeLogs.deleteOne({ _id: `inv_${investeeId}` }),
+      ChangeLogs.deleteOne({ _id: `investee_${investeeId}` }),
     ])
 
     await deleteFile(result[0].publicId)

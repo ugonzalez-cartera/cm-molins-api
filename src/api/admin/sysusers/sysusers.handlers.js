@@ -154,7 +154,7 @@ export async function deleteSysuser (req, reply) {
     await Promise.all([
       Sysusers.deleteOne({ _id: sysuserId }),
       UsersMetadata.deleteOne({ _id: sysuserId }),
-      ChangeLogs.deleteOne({ _id: `sys_${sysuserId}` }),
+      ChangeLogs.deleteOne({ _id: `sysuser_${sysuserId}` }),
     ])
 
     return { message: 'OK' }

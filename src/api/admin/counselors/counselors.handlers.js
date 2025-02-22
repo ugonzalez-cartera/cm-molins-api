@@ -164,7 +164,7 @@ export async function deleteCounselor (req, reply) {
     await Promise.all([
       Counselors.deleteOne({ _id: counselorId }),
       UsersMetadata.deleteOne({ _id: counselorId }),
-      ChangeLogs.deleteOne({ _id: `coun_${counselorId}` }),
+      ChangeLogs.deleteOne({ _id: `counselor_${counselorId}` }),
     ])
 
     return { msg: 'OK' }
