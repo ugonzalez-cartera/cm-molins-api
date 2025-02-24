@@ -84,7 +84,6 @@ export async function uploadFile (buffer, folder, fileName) {
         upload_preset: 'ml_default',
         public_id: fileName,
         resource_type: 'auto',
-        format: 'jpg',
       },
       (error, result) => {
         if (result) resolve(result)
