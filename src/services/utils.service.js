@@ -77,43 +77,62 @@ export function generateStrongPassword () {
 
 // --------------------
 export async function uploadFile (buffer, folder, fileName) {
-  return new Promise((resolve, reject) => {
-    const uploadStream = cloudinary.uploader.upload_stream(
-      {
-        folder,
-        upload_preset: 'ml_default',
-        public_id: fileName,
-        resource_type: 'auto',
-      },
-      (error, result) => {
-        if (result) resolve(result)
-        else reject(error)
-      },
-    )
-
-    streamifier.createReadStream(buffer).pipe(uploadStream)
-  })
+  try {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        {
+          folder,
+          upload_preset: 'ml_default',
+          public_id: fileName,
+          resource_type: 'auto',
+        },
+        (error, result) => {
+          if (result) resolve(result)
+          else reject(error)
+        },
+      )
+  
+      streamifier.createReadStream(buffer).pipe(uploadStream)
+    })
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
 }
 
 // --------------------
 export async function deleteFile (publicId) {
-  const result = await cloudinary.uploader.destroy(publicId)
+  try {
+    const result = await cloudinary.uploader.destroy(publicId)
 
-  return result
+    return result
+  } catch ( err) {
+    console.error(err)
+    throw err
+  }
 }
 
 // --------------------
 export async function deleteFolder (folder) {
-  const result = await cloudinary.api.delete_folder(folder)
-
-  return result
+  try {
+    const result = await cloudinary.api.delete_folder(folder)
+    return result
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
 }
 
 // --------------------
 export async function deleteResourcesByPrefix (prefix) {
-  const result = await cloudinary.api.delete_resources_by_prefix(prefix)
+  try {
+    const result = await cloudinary.api.delete_resources_by_prefix(prefix)
 
-  return result
+    return result
+  } catch (err) {
+    console.error(err)
+    throw err
+  }
 }
 
 // --------------------
