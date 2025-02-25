@@ -5,6 +5,11 @@ import mongoose from 'mongoose'
 import {  uploadFile, deleteFile, deleteResourcesByPrefix, deleteFolder } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
+import timezone from 'dayjs/plugin/timezone.js'
+import utc from 'dayjs/plugin/utc.js'
+
+dayjs.extend(utc)
+dayjs.extend(timezone)
 
 const Councils = mongoose.model('Council')
 const Counselors = mongoose.model('Counselor')
@@ -43,7 +48,7 @@ export async function createCouncil (req, reply) {
         agenda = councilAgenda
         month = dayjs(date).month()
         year = dayjs(date).year()
-        newDate = dayjs(date).toISOString()
+        newDate = dayjs(date).tz('Europe/Paris').toISOString()
 
         const isExistingCouncil = await Councils.findOne({ year, month })
         if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -87,7 +92,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
-      newDate = dayjs(date).toISOString()
+      newDate = dayjs(date).tz('Europe/Paris').toISOString()
 
       const isExistingCouncil = await Councils.exists({ year, month })
       if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -338,7 +343,7 @@ export async function createCouncilDocs (req, reply) {
 // --------------------
 export async function getAvailableCallCouncils (req, reply) {
   try {
-    const councils = await Councils.find({ date: { $gt: dayjs().startOf('day').toISOString() } }).lean()
+    const councils = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
 
     return councils
   } catch (err) {
@@ -369,7 +374,7 @@ export async function createCouncilCall (req, reply) {
       description: council.call.description,
       body: council.agenda,
       title: council.call.title,
-      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.date).format('DD/MM/YYYY')}`,
+      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
     }
 
     const hasAttachment = council.docs.length > 0 || !!council.report
