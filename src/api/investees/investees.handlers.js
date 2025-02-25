@@ -22,7 +22,13 @@ export async function getInvestees (req, reply) {
     }
 
     if (term) {
-      filter.name = { $regex: new RegExp(`${term}`, 'i') }
+      const decodedTerm = decodeURIComponent(term)
+      const escapedTerm = decodedTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+      filter.$or = [
+        { name: { $regex: new RegExp(`${term}`, 'i') } },
+        { 'description.es': { $regex: new RegExp(`${escapedTerm}`, 'i') } },
+      ]
     }
 
 
