@@ -35,9 +35,19 @@ export async function createCouncil (req, reply) {
       const parts = req.files()
       for await (const part of parts) {
         if (part.file && part.fieldname === 'councilAdditionalDocs') {
+          // Get part format.
+          const format = part.mimetype
+          if (format !== 'application/pdf') {
+            const error = this.httpErrors.badRequest('Only PDF files are allowed.')
+            error.code = 'invalid-format'
+            return reply.send(error)
+          }
+
           filesToUpload +=1
           if (filesToUpload > 3) {
-            return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
+            const error = this.httpErrors.badRequest('Max allowed files are 3.')
+            error.code = 'max-allowed-files'
+            return reply.send(error)
           }
         }
 
@@ -48,7 +58,7 @@ export async function createCouncil (req, reply) {
         agenda = councilAgenda
         month = dayjs(date).month()
         year = dayjs(date).year()
-        newDate = dayjs(date).tz('Europe/Paris').toISOString()
+        newDate = dayjs(date).startOf('day').tz('Europe/Paris').toISOString()
 
         const isExistingCouncil = await Councils.findOne({ year, month })
         if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -92,7 +102,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
-      newDate = dayjs(date).tz('Europe/Paris').toISOString()
+      newDate = dayjs(date).startOf('day').tz('Europe/Paris').toISOString()
 
       const isExistingCouncil = await Councils.exists({ year, month })
       if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -312,7 +322,7 @@ export async function createCouncilDocs (req, reply) {
 
     for await (const part of parts) {
       if (part.file) {
-        // get part format
+        // Get part format.
         const format = part.mimetype
         if (format !== 'application/pdf') {
           const error = this.httpErrors.badRequest('Only PDF files are allowed.')
@@ -365,6 +375,7 @@ export async function getAvailableCallCouncils (req, reply) {
 
 // --------------------
 export async function createCouncilCall (req, reply) {
+  const { origin } = req.headers
   const { id: userId } = req.user
   const { councilId } = req.params
   const callData = req.body
@@ -410,6 +421,7 @@ export async function createCouncilCall (req, reply) {
         familyName: counselor.familyName.toUpperCase(),
         email: counselor.email,
         locale: counselor.country,
+        ctaLink: `${origin}`,
       })
 
       sendNotificationEmail(emailData)
