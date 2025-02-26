@@ -26,7 +26,6 @@ export async function getChangelogs (req, reply) {
       _id: log.updatedBy,
       givenName: user?.givenName,
       familyName: user?.familyName,
-      email: user?.email,
       role: user?.role,
     }
 
