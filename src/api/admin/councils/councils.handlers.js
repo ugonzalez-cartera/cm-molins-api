@@ -384,11 +384,10 @@ export async function createCouncilCall (req, reply) {
       emailData.attachment = []
 
       if (hasAttachedDocs) {
-        // Add .jpg extension to publicId as public id has the original extension.
-        emailData.attachment.push(...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId + '.jpg' })))
+        emailData.attachment.push(...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId })))
       }
       if (hasAttachedReport) {
-        emailData.attachment.push({ url: council.report.secureUrl, name: council.report.publicId + '.jpg' })
+        emailData.attachment.push({ url: council.report.secureUrl, name: council.report.publicId })
       }
     }
 
