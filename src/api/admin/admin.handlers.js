@@ -15,6 +15,7 @@ export async function getChangelogs (req, reply) {
 
   const populatedLogs = []
   for (const log of changeLogs.changes) {
+    // As log.updatedBy can be either a Sysuser or a Counselor, we need to check both collections.
     let user = await Sysusers.findOne({ _id: log.updatedBy }).lean()
 
     if (!user) {
