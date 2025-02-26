@@ -24,10 +24,10 @@ export async function getChangelogs (req, reply) {
 
     const userDetails = {
       _id: log.updatedBy,
-      givenName: user.givenName,
-      familyName: user.familyName,
-      email: user.email,
-      role: user.role,
+      givenName: user?.givenName,
+      familyName: user?.familyName,
+      email: user?.email,
+      role: user?.role,
     }
 
     log.updatedBy = userDetails
