@@ -91,7 +91,7 @@ export async function uploadFile (buffer, folder, fileName) {
           else reject(error)
         },
       )
-  
+
       streamifier.createReadStream(buffer).pipe(uploadStream)
     })
   } catch (err) {

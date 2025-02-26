@@ -312,9 +312,20 @@ export async function createCouncilDocs (req, reply) {
 
     for await (const part of parts) {
       if (part.file) {
+        // get part format
+        const format = part.mimetype
+        if (format !== 'application/pdf') {
+          const error = this.httpErrors.badRequest('Only PDF files are allowed.')
+          error.code = 'invalid-format'
+          return reply.send(error)
+        }
+
+
         filesToUpload +=1
         if (filesToUpload > 3) {
-          return reply.badRequest('Maximum of 3 additionalDocs allowed for docs.')
+          const error = this.httpErrors.badRequest('Max allowed files are 3.')
+          error.code = 'max-allowed-files'
+          return reply.send(error)
         }
       }
 
