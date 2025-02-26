@@ -3,19 +3,39 @@
 import mongoose from 'mongoose'
 
 const ChangeLogs = mongoose.model('ChangeLog')
+const Sysusers = mongoose.model('Sysuser')
+const Counselors = mongoose.model('Counselor')
 
 export async function getChangelogs (req, reply) {
   const { logId } = req.params
 
-  const changeLogs = await ChangeLogs.findOne({ _id: logId }).populate('changes.updatedBy')
+  const changeLogs = await ChangeLogs.findOne({ _id: logId }).lean()
 
   if (!changeLogs) return reply.notFound('Changelog not found.')
 
-  // Sort changes by updatedAt field in descending order.
-  const sortedChanges = changeLogs.changes.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+  const populatedLogs = []
+  for (const log of changeLogs.changes) {
+    let user = await Sysusers.findOne({ _id: log.updatedBy }).lean()
+
+    if (!user) {
+      user = await Counselors.findOne({ _id: log.updatedBy }).lean()
+    }
+
+    const userDetails = {
+      _id: log.updatedBy,
+      givenName: user.givenName,
+      familyName: user.familyName,
+      email: user.email,
+      role: user.role,
+    }
+
+    log.updatedBy = userDetails
+
+    populatedLogs.push(log)
+  }
 
   return {
-    docs: sortedChanges || [],
+    docs: populatedLogs.reverse(),
     changesCount: changeLogs.changes.length || 0,
   }
 }
