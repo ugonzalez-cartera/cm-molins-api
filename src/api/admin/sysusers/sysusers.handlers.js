@@ -29,7 +29,7 @@ export async function createSysuser (req, reply) {
     givenName,
     familyName,
     country: 'es',
-    role: 'admin',
+    roles: ['admin'],
     updatedBy: userId,
   })
 

@@ -8,10 +8,8 @@ import config from '../../config.js'
 
 import { sendRequestResetPasswordEmail } from '../../services/notification.service.js'
 
-
-const Sysusers = mongoose.model('Sysuser')
-const Counselors = mongoose.model('Counselor')
 const UsersMetadata = mongoose.model('UserMetadata')
+const Users = mongoose.model('User')
 
 // --------------------
 export async function getToken (req, reply) {
@@ -20,15 +18,9 @@ export async function getToken (req, reply) {
   if (!email || !password) return reply.badRequest('Email and password are required.')
 
   try {
-    let user = await Counselors.findOne({ email })
-    if (user) {
-      user.role = ['counselor']
-    } else {
-      user = await Sysusers.findOne({ email })
+    const user = await Users.findOne({ email })
 
-    }
-
-    if (!user || !user.role) return reply.unauthorized('User not found.')
+    if (!user || !user.roles) return reply.unauthorized('User not found.')
 
     const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+password').lean()
     if (!userMeta) return reply.unauthorized('User not found.')
@@ -44,7 +36,7 @@ export async function getToken (req, reply) {
 
     const payload = {
       sub: user._id,
-      role: user.role,
+      roles: user.roles,
     }
 
     const refreshTokenPayload = {
@@ -58,7 +50,7 @@ export async function getToken (req, reply) {
     user.lastSessionAt = new Date()
     await user.save()
 
-    console.info(' --> Access token for', user._id, user.role)
+    console.info(' --> Access token for', user._id, user.roles)
 
     return reply.send({ token, refreshToken })
   } catch (err) {
@@ -80,14 +72,9 @@ export async function refreshToken (req, reply) {
     // Decode the received refresh token *not* the one passed via Authorization header.
     const { sub } = jwt.verify(refreshToken, process.env.API_SECRET)
 
-    let user = await Counselors.findOne({ _id: sub }).select('_id role')
-    if (user) {
-      user.role = ['counselor']
-    } else {
-      user = await Sysusers.findOne({ _id: sub }).select('_id role isNotActive')
-    }
+    const user = await Users.findOne({ _id: sub }).select('_id roles isNotActive')
 
-    if (!user || !user.role) return reply.unauthorized('User not found.')
+    if (!user || !user.roles) return reply.unauthorized('User not found.')
 
     const userMeta = await UsersMetadata.findOne({ _id: sub })
     if (!userMeta) {
@@ -103,7 +90,7 @@ export async function refreshToken (req, reply) {
 
     const payload = {
       sub: user._id,
-      role: user.role,
+      roles: user.roles,
     }
 
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
@@ -112,7 +99,7 @@ export async function refreshToken (req, reply) {
     user.lastSessionAt = new Date()
     await user.save()
 
-    console.info(' Refresh token for:', user._id, user.role)
+    console.info(' Refresh token for:', user._id, user.roles)
 
     return { token }
   } catch (err) {
@@ -129,13 +116,7 @@ export async function requestResetPassword (req, reply) {
   if (!email) return reply.badRequest('Email is required.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email role').lean()
-    if (user) {
-      user.role = ['counselor']
-    } else {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id givenName familyName email role').lean()
-    }
-
+    const user = await Users.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email roles').lean()
     if (!user) {
       // Return OK if no user to avoid giving extra unnecessary info.
       return { msg: 'OK' }
@@ -171,11 +152,7 @@ export async function resetPassword (req, reply) {
   if (!email || !password || !token) return reply.badRequest('Missing information.')
 
   try {
-    let user = await Counselors.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
-    if (!user) {
-      user = await Sysusers.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
-    }
-
+    const user = await Users.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
     if (!user) return reply.notFound('User not found.')
 
     const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken')

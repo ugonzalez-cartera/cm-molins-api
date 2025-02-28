@@ -4,19 +4,15 @@ import config from '../../config.js'
 
 import argon2 from 'argon2'
 
-const Sysusers = mongoose.model('Sysuser')
-const Counselors = mongoose.model('Counselor')
 const UsersMetadata = mongoose.model('UserMetadata')
+const Users = mongoose.model('User')
 
 // --------------------
 export async function getOwnUser (req, reply) {
   const { id } = req.user
 
   try {
-    let user = await Sysusers.findOne({ _id: id }).lean()
-    if (!user) {
-      user = await Counselors.findOne({ _id: id }).lean()
-    }
+    const user = await Users.findOne({ _id: id }).lean()
 
     if (!user) return reply.notFound('User not found.')
 
@@ -33,10 +29,7 @@ export async function updateOwnUser (req, reply) {
   const { givenName, familyName, email, isNotActive } = req.body
 
   try {
-    let user = await Sysusers.findOne({ _id: userId })
-    if (!user) {
-      user = await Counselors.findOne({ _id: userId })
-    }
+    const user = await Users.findOne({ _id: userId })
 
     if (!user) return reply.notFound('User not found.')
 

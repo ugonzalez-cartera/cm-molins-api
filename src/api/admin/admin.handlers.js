@@ -3,8 +3,7 @@
 import mongoose from 'mongoose'
 
 const ChangeLogs = mongoose.model('ChangeLog')
-const Sysusers = mongoose.model('Sysuser')
-const Counselors = mongoose.model('Counselor')
+const Users = mongoose.model('User')
 
 export async function getChangelogs (req, reply) {
   const { logId } = req.params
@@ -16,17 +15,14 @@ export async function getChangelogs (req, reply) {
   const populatedLogs = []
   for (const log of changeLogs.changes) {
     // As log.updatedBy can be either a Sysuser or a Counselor, we need to check both collections.
-    let user = await Sysusers.findOne({ _id: log.updatedBy }).lean()
-
-    if (!user) {
-      user = await Counselors.findOne({ _id: log.updatedBy }).lean()
-    }
+    const user = await Users.findOne({ _id: log.updatedBy }).lean()
+    console.info(user)
 
     const userDetails = {
       _id: log.updatedBy,
       givenName: user?.givenName,
       familyName: user?.familyName,
-      role: user?.role,
+      roles: user?.roles,
     }
 
     log.updatedBy = userDetails

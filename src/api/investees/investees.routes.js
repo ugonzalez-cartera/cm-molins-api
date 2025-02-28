@@ -8,7 +8,7 @@ async function routes (fastify, opts) {
   // Set global authorization config.
   opts.config = configAllowance(config.roleGroups.admin)
 
-  fastify.get('/', { ...opts, config: { authorize: { role: [...config.roleGroups.admin.role, ...config.roleGroups.guest.role] } } }, getInvestees)
+  fastify.get('/', { ...opts, config: { authorize: { roles: [...config.roleGroups.admin.roles, ...config.roleGroups.guest.roles] } } }, getInvestees)
   fastify.post('/', { ...opts }, createInvestee)
   fastify.put('/:investeeId', { ...opts }, updateInvestee)
   fastify.get('/:investeeId', { ...opts }, fetchInvesteeById)

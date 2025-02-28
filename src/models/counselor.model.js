@@ -1,12 +1,10 @@
-import mongoose from 'mongoose'
-
 import { customAlphabet } from 'nanoid'
 
 import config from '../config.js'
 
 import { changeLogPlugin } from '../changeLogPlugin.js'
 
-const { model, Schema } = mongoose
+import { model, Schema } from 'mongoose'
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
@@ -16,7 +14,7 @@ const CounselorSchema = new Schema({
   familyName: { type: String, required: true },
   email: { type: String, required: true, lowercase: true },
   country: { type: String, default: 'es' },
-  role: { type: Array, default: ['counselor'] },
+  roles: { type: Array, default: ['counselor'] },
   isNotActive: { type: Boolean },
   lastSessionAt: { type: Date },
 },

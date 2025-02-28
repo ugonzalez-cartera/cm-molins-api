@@ -26,12 +26,13 @@ const config = {
       alphabet: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
     },
   },
-  roleList: ['admin', 'counselor'], // Ordered by hierarchy.
+  roleList: ['owner', 'admin', 'counselor'], // Ordered by hierarchy.
   roleGroups: {
-    guest: { role: ['guest'] },
-    authenticated: { role: ['authenticated'], reason: 'allowAuthenticatedOnly -- Access not authorized' },
-    admin: { role: ['admin'], reason: 'allowAdminsOnly -- Access not authorized' },
-    counselor: { role: ['counselor'], reason: 'allowCounselorsOnly -- Access not authorized' },
+    guest: { roles: ['guest'] },
+    authenticated: { roles: ['owner', 'admin', 'counselor'], reason: 'allowAuthenticatedOnly -- Access not authorized' },
+    owner: { roles: ['owner'], reason: 'allowOwnerOnly -- Access not authorized' },
+    admin: { roles: ['owner', 'admin'], reason: 'allowAdminsOnly -- Access not authorized' },
+    counselor: { roles: ['counselor'], reason: 'allowCounselorsOnly -- Access not authorized' },
   },
   //Mailing
   brevo: {
@@ -46,10 +47,6 @@ const config = {
   // Change logs
   changeLogs: {
     prefixes: {
-      sysusers: 'sysuser_',
-      counselors: 'counselor_',
-      investees: 'investee_',
-      councils: 'council_',
       default: 'SYSTEM',
     },
     maxLogItems: 200,

@@ -3,18 +3,18 @@
 import jwt from 'jsonwebtoken'
 
 // --------------------
-export function configAllowance ({ role, reason }) {
+export function configAllowance ({ roles, reason }) {
   // Clean up duplicate roles if any.
-  const uniqueRoles = [...new Set(role)]
+  const uniqueRoles = [...new Set(roles)]
 
-  return { authorize: { role: uniqueRoles, reason } }
+  return { authorize: { roles: uniqueRoles, reason } }
 }
 
 // --------------------
 export function logTokens () {
   const payload = {
     sub: 'apikey01',
-    role: ['guest'],
+    roles: ['guest'],
   }
   const options = {
     algorithm: 'HS256',

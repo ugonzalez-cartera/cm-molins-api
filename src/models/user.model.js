@@ -1,16 +1,15 @@
-import mongoose from 'mongoose'
-
-import { customAlphabet } from 'nanoid'
+import { model, Schema } from 'mongoose'
 
 import config from '../config.js'
 
 import { changeLogPlugin } from '../changeLogPlugin.js'
 
-const { model, Schema } = mongoose
+import { customAlphabet } from 'nanoid'
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
-const SysuserSchema = new Schema({
-  _id: { type: String, default: () => newId() },
+
+const UserSchema = new Schema({
+  _id: { type: String, default: () => `usr_${newId()}` },
   givenName: { type: String, required: true },
   familyName: { type: String, required: true },
   email: { type: String, required: true, lowercase: true },
@@ -20,7 +19,7 @@ const SysuserSchema = new Schema({
   lastSessionAt: { type: Date },
 },
 {
-  collection: 'sysusers',
+  collection: 'users',
   timestamps: true,
   // User info is important -- specify write concern of 'majority'.
   writeConcern: { w: 'majority', j: true, wtimeout: 5000 },
@@ -28,8 +27,8 @@ const SysuserSchema = new Schema({
   id: false, // No additional id as virtual getter.
   toJSON: { versionKey: false, virtuals: true },
   toObject: { versionKey: false },
-})
+  })
 
-SysuserSchema.plugin(changeLogPlugin)
+  UserSchema.plugin(changeLogPlugin)
 
-export default model('Sysuser', SysuserSchema)
+export default model('User', UserSchema)

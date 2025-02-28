@@ -5,7 +5,7 @@ import config from '../../config.js'
 
 async function routes (fastify, opts) {
   // Set global authorization config.
-  opts.config = configAllowance({ role: [...config.roleGroups.admin.role, ...config.roleGroups.counselor.role] })
+  opts.config = configAllowance({ roles: [...config.roleGroups.admin.roles, ...config.roleGroups.counselor.roles] })
 
   fastify.get('/', { ...opts }, getOwnUser)
   fastify.put('/', { ...opts }, updateOwnUser)

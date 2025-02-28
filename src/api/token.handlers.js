@@ -19,13 +19,12 @@ export async function verifyToken (req, reply) {
     const decodedToken = jwt.verify(jwtToken, process.env.API_SECRET)
 
     // Refresh tokens don't have roles -- this prevents using RT's for accessing the API.
-    if (!decodedToken.role) return reply.unauthorized()
-
-    console.info(' --> Access token for', decodedToken.sub, decodedToken.role)
+    if (!decodedToken) return reply.unauthorized()
+    console.info(' --> Access token for', decodedToken.sub, decodedToken.roles)
 
     req.user = {
       id: decodedToken.sub,
-      role: decodedToken.role,
+      roles: decodedToken.roles,
     }
   } catch (err) {
     return reply.unauthorized()
@@ -35,8 +34,8 @@ export async function verifyToken (req, reply) {
 
 // --------------------
 export function authorize (req, reply, done) {
-  const { role: authorizedRoles = [], reason } = req.routeOptions.config?.authorize || {}
-  const userRoles = req.user?.role || []
+  const { roles: authorizedRoles = [], reason } = req.routeOptions.config?.authorize || {}
+  const userRoles = req.user?.roles || []
 
   console.info(' --> Authorizing', req.user.id, 'for', authorizedRoles)
 

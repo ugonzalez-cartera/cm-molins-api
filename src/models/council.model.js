@@ -6,31 +6,15 @@ import config from '../config.js'
 
 import { changeLogPlugin } from '../changeLogPlugin.js'
 
+import { CallSchema } from '../schemas/call.schema.js'
+import { FileSchema } from '../schemas/file.schema.js'
+
 const { model, Schema } = mongoose
 
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
-const FileSchema = new Schema({
-  _id: false,
-  secureUrl: { type: String },
-  publicId: { type: String },
-},
-  {
-  id: false, // No additional id as virtual getter.
-})
-
-const CallSchema = new Schema({
-  _id: false,
-  title: { type: String, required: true },
-  description: { type: String },
-  date: { type: Date, required: true },
-},
-  {
-  id: false, // No additional id as virtual getter.
-})
-
 const CouncilSchema = new Schema({
-  _id: { type: String, default: () => newId() },
+  _id: { type: String, default: () => `council_${newId()}` },
   minutes: { type: String },
   agenda: { type: String },
   call: { type: CallSchema },

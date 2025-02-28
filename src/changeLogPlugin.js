@@ -10,7 +10,7 @@ class ChangeLogManager {
   async createChangeLog (oldObj, newObj, changeLogData) {
     if(!oldObj || !newObj) return
 
-    const {  prefix, updatedBy, maxLogItems, excludedKeys } = changeLogData
+    const { updatedBy, maxLogItems, excludedKeys } = changeLogData
 
     const changes = this.#getChangeLogChanges(oldObj, newObj)
 
@@ -26,7 +26,7 @@ class ChangeLogManager {
       if (excludedKeys.includes(data.key)) continue
 
       await ChangeLogs.updateOne(
-        { _id: `${prefix}${oldObj._id}` },
+        { _id: oldObj._id },
         {
           $push: {
             changes: {
@@ -96,13 +96,12 @@ const queryFunctions = [
 const defaultOptions = {
   maxLogItems: config.changeLogs.maxLogItems,
   defaultUpdatedBy: config.changeLogs.prefixes.default,
-  prefixes: config.changeLogs.prefixes,
   excludedKeys: ['updatedBy'],
 }
 
 // --------------------
 export function changeLogPlugin (schema, options = defaultOptions) {
-  const { maxLogItems, defaultUpdatedBy, prefixes, excludedKeys } = options
+  const { maxLogItems, defaultUpdatedBy, excludedKeys } = options
 
   schema.pre(documentFunctions, async function (next, options) {
     const { updatedBy = defaultUpdatedBy } = options || {}
@@ -148,12 +147,11 @@ export function changeLogPlugin (schema, options = defaultOptions) {
     if (!changeLogData) return
 
     const { collectionName, originalObj, updatedBy } = changeLogData
-    const prefix = prefixes[collectionName]
 
     try {
       const updatedObj = await this.constructor.findById(this._id).lean()
 
-      await changeLogManager.createChangeLog(originalObj, updatedObj, { prefix, updatedBy, maxLogItems, excludedKeys })
+      await changeLogManager.createChangeLog(originalObj, updatedObj, { updatedBy, maxLogItems, excludedKeys })
     } catch (err) {
       console.error(' !! Could not create changelog.', err)
     }
@@ -165,12 +163,11 @@ export function changeLogPlugin (schema, options = defaultOptions) {
     if (!changeLogData) return
 
     const { collectionName, originalObj, updatedBy } = changeLogData
-    const prefix = prefixes[collectionName]
 
     try {
       const updatedObj = await this.model.findOne(this.getQuery()).lean()
 
-      await changeLogManager.createChangeLog(originalObj, updatedObj, { prefix, updatedBy, maxLogItems, excludedKeys })
+      await changeLogManager.createChangeLog(originalObj, updatedObj, { updatedBy, maxLogItems, excludedKeys })
     } catch (err) {
       console.error(' !! Could not create changelog.', err)
     }
