@@ -36,14 +36,12 @@ export async function sendNotificationEmail (emailData) {
   try {
     const dataToSend = {
       subject: `${subjectPrefix}${emailSubject}`,
-      sender: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
-      replyTo: { name: 'Cartera C.M', email: 'ugonzalezcartera@gmail.com' },
+      sender: { name: 'Cartera de inversiones C.M', email: 'ugonzalezcartera@gmail.com' },
+      replyTo: { name: 'Cartera de inversiones C.M', email: 'ugonzalezcartera@gmail.com' },
       to: [{ email: emailTo, name: nameTo }],
       templateId: emailData.templateId || config.brevo.template.notification,
       params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }] },
     }
-
-    if (emailData.attachment) dataToSend.attachment = emailData.attachment
 
     const { data } = await axios.post(config.brevo.endpoint,
       dataToSend,

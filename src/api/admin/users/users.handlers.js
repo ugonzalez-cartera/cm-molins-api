@@ -74,7 +74,7 @@ async function createUser (req, reply) {
 // --------------------
 export async function getUsers (req, reply) {
   const { id: userId } = req.user
-  const { status, limit, page, sort, roles } = req.query
+  const { limit, page, sort, roles } = req.query
 
   const filter = {
     _id: { $not: { $eq: userId } },
@@ -82,10 +82,6 @@ export async function getUsers (req, reply) {
 
   }
   const skip = (limit * page) - limit
-
-  if (status) {
-    filter.status = status
-  }
 
   try {
     const [docs, docCount] = await Promise.all([
@@ -121,14 +117,17 @@ async function getUserById (req, reply) {
 // --------------------
 async function updateUser (req, reply) {
   const { userId } = req.params
-  const { givenName, familyName, email, isNotActive } = req.body
+  const { givenName, familyName, email, isNotActive, roles } = req.body
 
   const newData = {
     givenName,
     familyName,
     email,
     isNotActive,
+    roles,
   }
+
+  if (roles.length === 0) return reply.badRequest('Roles are required.')
 
   try {
     const isExistingUser = await Users.exists({ email })

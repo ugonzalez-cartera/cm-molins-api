@@ -395,21 +395,7 @@ export async function createCouncilCall (req, reply) {
       description: council.call.description,
       body: council.agenda,
       title: council.call.title,
-      subject: `Convocatoria Consejo Cartera C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
-    }
-
-    const hasAttachment = council.docs.length > 0 || !!council.report
-    const hasAttachedDocs = council.docs.length > 0
-    const hasAttachedReport = !!council.report
-    if (hasAttachment) {
-      emailData.attachment = []
-
-      if (hasAttachedDocs) {
-        emailData.attachment.push(...council.docs?.map(doc => ({ url: doc.secureUrl, name: doc.publicId })))
-      }
-      if (hasAttachedReport) {
-        emailData.attachment.push({ url: council.report.secureUrl, name: council.report.publicId })
-      }
+      subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
     }
 
     const counselors = await Counselors.find({ isNotActive: { $ne: true } }).lean()
