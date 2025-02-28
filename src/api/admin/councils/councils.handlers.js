@@ -58,7 +58,7 @@ export async function createCouncil (req, reply) {
         agenda = councilAgenda
         month = dayjs(date).month()
         year = dayjs(date).year()
-        newDate = dayjs(date).startOf('day').tz('Europe/Paris').toISOString()
+        newDate = dayjs(date).startOf('day').utc(true).toISOString()
 
         const isExistingCouncil = await Councils.findOne({ year, month })
         if (isExistingCouncil) return reply.conflict('Council already exists')
@@ -102,7 +102,7 @@ export async function createCouncil (req, reply) {
       const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
-      newDate = dayjs(date).startOf('day').tz('Europe/Paris').toISOString()
+      newDate = dayjs(date).startOf('day').utc(true).toISOString()
 
       const isExistingCouncil = await Councils.exists({ year, month })
       if (isExistingCouncil) return reply.conflict('Council already exists')
