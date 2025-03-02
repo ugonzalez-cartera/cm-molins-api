@@ -262,7 +262,7 @@ async function updateCouncilFileResource (req, reply) {
 
     await Councils.updateOne(
       { _id: councilId },
-      { $set: { [resource]: { file: updatedFile } } },
+      { $set: { [`${resource}.file`]: updatedFile } },
       { updatedBy: userId }
     )
   } catch (err) {
@@ -287,7 +287,7 @@ async function deleteCouncilFileResource (req, reply) {
 
     await Councils.updateOne(
       { _id: councilId },
-      { $unset: { [resource]: 0 } }
+      { $unset: { [`${resource}.file`]: 0 } }
     )
 
     return 'OK'
