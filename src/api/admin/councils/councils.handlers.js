@@ -248,7 +248,6 @@ async function updateCouncilFileResource (req, reply) {
       uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
 
       if (council[resource]?.publicId) {
-        console.info('Deleting previous file', council[resource].publicId)
         deleteFile(council[resource].publicId)
       }
     }
