@@ -103,7 +103,7 @@ async function createCouncil (req, reply) {
         }
       }
 
-      const agendaDescription = agenda && {  description: agenda.replace(/(?:\r\n|\r|\n)/g, '<br>') }
+      const agendaDescription = agenda && {  description: agenda.description?.replace(/(?:\r\n|\r|\n)/g, '<br>') }
       const newAgenda = agendaFile ? { file: agendaFile, ...agendaDescription } : agendaDescription
 
       newCouncil = new Councils({
@@ -118,7 +118,7 @@ async function createCouncil (req, reply) {
       const { date, agenda } = req.body || {}
       if (!date) return reply.badRequest('Missing required fields.')
 
-      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+      const parsedAgenda = agenda.description?.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
       newDate = dayjs(date).startOf('day').utc(true).toISOString()
@@ -485,7 +485,7 @@ async function createCouncilCall (req, reply) {
     const emailData = {
       templateId: 3,
       description: council.call.description,
-      body: council.agenda,
+      body: council.agenda.description,
       title: council.call.title,
       subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
     }
