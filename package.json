@@ -1,6 +1,6 @@
 {
   "name": "cartera-cm-api",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "carteracm-api",
   "main": "index.js",
   "type": "module",
