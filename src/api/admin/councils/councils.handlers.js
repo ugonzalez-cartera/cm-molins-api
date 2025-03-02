@@ -103,7 +103,8 @@ async function createCouncil (req, reply) {
         }
       }
 
-      const newAgenda = agendaFile ? { file: agendaFile } : agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+      const agendaDescription = agenda && {  description: agenda.replace(/(?:\r\n|\r|\n)/g, '<br>') }
+      const newAgenda = agendaFile ? { file: agendaFile, ...agendaDescription } : agendaDescription
 
       newCouncil = new Councils({
         year,
@@ -117,7 +118,7 @@ async function createCouncil (req, reply) {
       const { date, agenda } = req.body || {}
       if (!date) return reply.badRequest('Missing required fields.')
 
-      const parsedAgenda = agenda && agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
       newDate = dayjs(date).startOf('day').utc(true).toISOString()
@@ -129,9 +130,12 @@ async function createCouncil (req, reply) {
         year,
         month,
         date: newDate,
-        agenda: parsedAgenda,
+        agenda: {
+          description: parsedAgenda
+        },
       })
     }
+
 
     newCouncil.updatedBy = userId
 
