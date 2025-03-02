@@ -51,7 +51,9 @@ export async function sendNotificationEmail (emailData) {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-    })
+      })
+
+    console.info(data, 'DATA SENT')
 
     return data
   } catch (err) {

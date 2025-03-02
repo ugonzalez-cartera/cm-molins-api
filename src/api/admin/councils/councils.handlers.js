@@ -12,7 +12,7 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 const Councils = mongoose.model('Council')
-const Counselors = mongoose.model('Counselor')
+const Users = mongoose.model('User')
 const ChangeLogs = mongoose.model('ChangeLog')
 
 import { sendNotificationEmail } from '../../../services/utils.service.js'
@@ -20,7 +20,7 @@ import { sendNotificationEmail } from '../../../services/utils.service.js'
 const currentEnv = process.env.NODE_ENV
 
 // --------------------
-export async function createCouncil (req, reply) {
+async function createCouncil (req, reply) {
   const {  id: userId } = req.user
   const additionalDocs = []
   let reportFile = {}
@@ -132,7 +132,7 @@ export async function createCouncil (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncilYear (req, reply) {
+async function deleteCouncilYear (req, reply) {
   const { councilYear } = req.params
 
   try {
@@ -159,7 +159,7 @@ export async function deleteCouncilYear (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncil (req, reply) {
+async function deleteCouncil (req, reply) {
   const { councilId } = req.params
 
   try {
@@ -178,7 +178,7 @@ export async function deleteCouncil (req, reply) {
 }
 
 // --------------------
-export async function updateCouncil (req, reply) {
+async function updateCouncil (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params
   const { agenda, minutes, date } = req.body || {}
@@ -209,7 +209,7 @@ export async function updateCouncil (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncilReport (req, reply) {
+async function deleteCouncilReport (req, reply) {
   const { councilId } = req.params
 
   try {
@@ -228,7 +228,78 @@ export async function deleteCouncilReport (req, reply) {
 }
 
 // --------------------
-export async function updateCouncilReport (req, reply) {
+async function updateCouncilFileResource (req, reply) {
+  const {  id: userId } = req.user
+  const { councilId, resource } = req.params
+
+  try {
+    const council = await Councils.findOne({ _id: councilId })
+    if (!council) return reply.notFound('Council not found.')
+
+    const file = await req?.file()
+
+    let uploadedFile
+    if (file) {
+      const councilFile = file.fields.councilFile
+
+      const buffer = await file.fields.councilFile.toBuffer()
+
+      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/${resource}`
+      uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
+
+      if (council[resource]?.publicId) {
+        console.info('Deleting previous file', council[resource].publicId)
+        deleteFile(council[resource].publicId)
+      }
+    }
+
+    let updatedFile
+    if (uploadedFile) {
+      updatedFile = {
+        secureUrl: uploadedFile.secure_url,
+        publicId: uploadedFile.public_id
+      }
+    }
+
+    await Councils.updateOne(
+      { _id: councilId },
+      { $set: { [resource]: { file: updatedFile } } },
+      { updatedBy: userId }
+    )
+  } catch (err) {
+    console.error(' !! Could not update council file resource.', err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+async function deleteCouncilFileResource (req, reply) {
+  const { councilId, resource } = req.params
+
+  try {
+    const council = await Councils.findOne
+      ({ _id: councilId })
+
+    if (!council) return reply.notFound('Council not found.')
+
+    if (council[resource]?.file?.publicId) {
+      deleteFile(council[resource].file.publicId)
+    }
+
+    await Councils.updateOne(
+      { _id: councilId },
+      { $unset: { [resource]: 0 } }
+    )
+
+    return 'OK'
+  } catch (err) {
+    console.error(' !! Could not delete council file resource.', err)
+    reply.internalServerError(err)
+  }
+}
+
+// --------------------
+async function updateCouncilReport (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params
 
@@ -278,7 +349,7 @@ export async function updateCouncilReport (req, reply) {
 }
 
 // --------------------
-export async function deleteCouncilDoc (req, reply) {
+async function deleteCouncilDoc (req, reply) {
   const {  id: userId } = req.user
   const { councilId, docId } = req.params
 
@@ -305,7 +376,7 @@ export async function deleteCouncilDoc (req, reply) {
 }
 
 // --------------------
-export async function createCouncilDocs (req, reply) {
+async function createCouncilDocs (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params
 
@@ -361,7 +432,7 @@ export async function createCouncilDocs (req, reply) {
 }
 
 // --------------------
-export async function getAvailableCallCouncils (req, reply) {
+async function getAvailableCallCouncils (req, reply) {
   try {
     const councils = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
 
@@ -373,7 +444,7 @@ export async function getAvailableCallCouncils (req, reply) {
 }
 
 // --------------------
-export async function createCouncilCall (req, reply) {
+async function createCouncilCall (req, reply) {
   const { origin } = req.headers
   const { id: userId } = req.user
   const { councilId } = req.params
@@ -398,7 +469,7 @@ export async function createCouncilCall (req, reply) {
       subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
     }
 
-    const counselors = await Counselors.find({ isNotActive: { $ne: true } }).lean()
+    const counselors = await Users.find({ roles: { $in: ['counselor'] } ,isNotActive: { $ne: true } }).lean()
 
     for (const counselor of counselors) {
       Object.assign(emailData,  {
@@ -417,4 +488,19 @@ export async function createCouncilCall (req, reply) {
     console.error(' !! Could not create call.', err)
     reply.internalServerError(err)
   }
+}
+
+export default {
+  createCouncil,
+  deleteCouncilYear,
+  deleteCouncil,
+  updateCouncil,
+  updateCouncilReport,
+  createCouncilDocs,
+  deleteCouncilDoc,
+  createCouncilCall,
+  getAvailableCallCouncils,
+  deleteCouncilReport,
+  updateCouncilFileResource,
+  deleteCouncilFileResource,
 }

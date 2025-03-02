@@ -15,8 +15,14 @@ const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
 const CouncilSchema = new Schema({
   _id: { type: String, default: () => `council_${newId()}` },
-  minutes: { type: String },
-  agenda: { type: String },
+  minutes: {
+    description: { type: String },
+    file: { type: FileSchema },
+  },
+  agenda: {
+    description: { type: String },
+    file: { type: FileSchema },
+   },
   call: { type: CallSchema },
   year: {  type: Number, required: true },
   month: { type: Number, required: true },

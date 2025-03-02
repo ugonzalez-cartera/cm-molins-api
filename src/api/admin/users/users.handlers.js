@@ -119,12 +119,15 @@ async function updateUser (req, reply) {
   const { userId } = req.params
   const { givenName, familyName, email, isNotActive, roles } = req.body
 
+
+  // Sort roles according to roleList order.
+  const sortedRoles = roles ? config.roleList.filter(role => roles.includes(role)) : []
   const newData = {
     givenName,
     familyName,
     email,
     isNotActive,
-    roles,
+    roles: sortedRoles,
   }
 
   if (roles.length === 0) return reply.badRequest('Roles are required.')
