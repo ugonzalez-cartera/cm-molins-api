@@ -24,6 +24,7 @@ async function createCouncil (req, reply) {
   const {  id: userId } = req.user
   const additionalDocs = []
   let reportFile = {}
+  let agendaFile = {}
   let filesToUpload = 0
 
   let month, year, agenda, newDate
@@ -53,7 +54,7 @@ async function createCouncil (req, reply) {
 
         const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
         const { date, agenda: councilAgenda } = councilData
-        if (!date || !councilAgenda) return reply.badRequest('Missing required fields.')
+        if (!date) return reply.badRequest('Missing required fields.')
 
         agenda = councilAgenda
         month = dayjs(date).month()
@@ -64,7 +65,17 @@ async function createCouncil (req, reply) {
         if (isExistingCouncil) return reply.conflict('Council already exists')
 
         const buffer = await part.toBuffer()
-        const dir = part.fieldname === 'councilAdditionalDocs' ? 'additional-docs' : 'reports'
+        let dir
+        switch (part.fieldname) {
+          case 'councilAdditionalDocs':
+            dir = 'additional-docs'
+            break
+          case 'councilReport':
+            dir = 'report'
+            break
+          default:
+            dir = 'agenda'
+        }
 
         const folder = `${currentEnv}-carteracm/councils/${month}-${year}/${dir}`
         const uploadedFile = await uploadFile(buffer, folder, part.filename)
@@ -83,9 +94,16 @@ async function createCouncil (req, reply) {
             publicId: uploadedFile.public_id
           }
         }
+
+        if (part.fieldname === 'councilAgenda') {
+          agendaFile = {
+            secureUrl: uploadedFile.secure_url,
+            publicId: uploadedFile.public_id
+          }
+        }
       }
 
-      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+      const newAgenda = agendaFile ? { file: agendaFile } : agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
 
       newCouncil = new Councils({
         year,
@@ -93,13 +111,13 @@ async function createCouncil (req, reply) {
         date: newDate,
         report: reportFile,
         docs: additionalDocs.length > 0 ? additionalDocs : undefined,
-        agenda: parsedAgenda,
+        agenda: newAgenda,
       })
     } else {
       const { date, agenda } = req.body || {}
-      if (!date || !agenda) return reply.badRequest('Missing required fields.')
+      if (!date) return reply.badRequest('Missing required fields.')
 
-      const parsedAgenda = agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
+      const parsedAgenda = agenda && agenda.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
       newDate = dayjs(date).startOf('day').utc(true).toISOString()
@@ -262,7 +280,7 @@ async function updateCouncilFileResource (req, reply) {
 
     await Councils.updateOne(
       { _id: councilId },
-      { $set: { [`${resource}.file`]: updatedFile } },
+      { $set: { [resource]: { file: updatedFile } } },
       { updatedBy: userId }
     )
   } catch (err) {
@@ -314,7 +332,7 @@ async function updateCouncilReport (req, reply) {
 
       const buffer = await file.fields.councilReportFile.toBuffer()
 
-      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/reports`
+      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/report`
       uploadedFile = await uploadFile(buffer, folder, councilReportFile.filename)
 
       if (council.report?.publicId) {
