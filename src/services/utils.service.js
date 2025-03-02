@@ -53,8 +53,6 @@ export async function sendNotificationEmail (emailData) {
       },
       })
 
-    console.info(data, 'DATA SENT')
-
     return data
   } catch (err) {
     console.error('  !! Error sending notification email')
