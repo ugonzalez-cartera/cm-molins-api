@@ -168,8 +168,12 @@ async function deleteCouncilYear (req, reply) {
       ])
 
       if (council.report?.publicId || council.docs.length > 0) {
-        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
-        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+        try {
+          await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+          await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+        } catch (innerErr) {
+          console.error(' !! Could not delete folder or resource.', innerErr)
+        }
       }
     }
 
@@ -189,8 +193,12 @@ async function deleteCouncil (req, reply) {
     const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
 
     if (council.report?.publicId || council.docs.length > 0) {
-      await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
-      await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      try {
+        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      } catch (innerErr) {
+        console.error(' !! Could not delete folder or resource.', innerErr)
+      }
     }
 
     return 'OK'
