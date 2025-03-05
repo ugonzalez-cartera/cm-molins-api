@@ -72,7 +72,7 @@ export async function createInvestee (req, reply) {
 
     const { name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description = {} } = JSON.parse(file.fields?.investeeData?.value || '')
 
-    const isExistingInvestee = await Investees.exists({ name })
+    const isExistingInvestee = await Investees.exists({ name }).lean()
     if (isExistingInvestee) return reply.conflict('Investee already exists.')
 
     const buffer = await file.fields.investeeFile.toBuffer()

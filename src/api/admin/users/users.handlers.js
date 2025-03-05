@@ -133,8 +133,8 @@ async function updateUser (req, reply) {
   if (roles.length === 0) return reply.badRequest('Roles are required.')
 
   try {
-    const isExistingUser = await Users.exists({ email })
-    if (isExistingUser.email === email) return reply.conflict('User already exists.')
+    const isExistingUser = await Users.findOne({ email }).lean()
+    if (isExistingUser?.email === email) return reply.conflict('User already exists.')
 
     const sysuser = await Users.findOneAndUpdate(
       { _id: userId },
