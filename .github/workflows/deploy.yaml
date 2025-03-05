@@ -1,0 +1,23 @@
+# .github/workflows/deploy.yaml
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy
+        # Only run this step if the branch is develop.
+        if: github.ref == 'refs/heads/develop'
+        env:
+          deploy_url: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$deploy_url" ]; then
+            echo "Error: RENDER_DEPLOY_HOOK_URL is not set"
+            exit 1
+          fi
+          curl -X POST "$deploy_url"
