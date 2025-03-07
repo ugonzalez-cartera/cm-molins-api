@@ -14,7 +14,7 @@ const { model, Schema } = mongoose
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
 const CouncilSchema = new Schema({
-  _id: { type: String, default: () => `council_${newId()}` },
+  _id: { type: String, default: () => `ccl_${newId()}` },
   minutes: {
     description: { type: String },
     file: { type: FileSchema },

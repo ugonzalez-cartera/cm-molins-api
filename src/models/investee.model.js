@@ -11,7 +11,7 @@ const { model, Schema } = mongoose
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
 const InvesteeSchema = new Schema({
-  _id: { type: String, default: () => newId() },
+  _id: { type: String, default: () => `inv_${newId()}` },
   name: { type: String, required: true },
   type: { type: String, enum: ['industry', 'realState', 'finance', 'ventureCapital'], required: true },
   investedAt: { type: Date },
