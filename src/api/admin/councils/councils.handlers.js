@@ -216,7 +216,13 @@ async function updateCouncil (req, reply) {
 
   const year = dayjs(date).year()
   const month = dayjs(date).month()
-  const update = { agenda, minutes, date, year, month }
+  const update = {
+    agenda,
+    minutes,
+    date,
+    year,
+    month
+  }
 
   try {
     const existingCouncil = await Councils.findOne({ month }).lean()
@@ -293,7 +299,7 @@ async function updateCouncilFileResource (req, reply) {
 
     await Councils.updateOne(
       { _id: councilId },
-      { $set: { [resource]: { file: updatedFile } } },
+      { $set: { [`${resource}.file`]: updatedFile } },
       { updatedBy: userId }
     )
   } catch (err) {
