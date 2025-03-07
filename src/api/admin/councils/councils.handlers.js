@@ -118,7 +118,6 @@ async function createCouncil (req, reply) {
       const { date, agenda } = req.body || {}
       if (!date) return reply.badRequest('Missing required fields.')
 
-      console.info('agenda', agenda)
       const parsedAgenda = agenda?.replace(/(?:\r\n|\r|\n)/g, '<br>')
       month = dayjs(date).month()
       year = dayjs(date).year()
@@ -497,7 +496,6 @@ async function createCouncilCall (req, reply) {
 
     if (!council) return reply.notFound('Council not found.')
 
-    console.info(council, 'council')
     const emailData = {
       templateId: 3,
       description: council.call.description,
