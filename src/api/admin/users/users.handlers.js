@@ -18,24 +18,25 @@ async function createUser (req, reply) {
 
   const { email, givenName, familyName, roles } = req.body
   if (!email) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Email is required',
       detail: 'Email is required to create a new user.',
       status: 400,
     })
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 
   try {
     const isExistingUser = await Users.exists({ email })
     if (isExistingUser) {
-      const error = CustomError.toJSON({
+      const error = new CustomError({
         title: '!! User already exists',
         detail: 'An user with this email already exists.',
         status: 409,
         instance: req.url,
       })
-      return reply.status(error.status).send(error)
+
+      return reply.status(error.status).send(error.toJSON())
     }
 
     // Sort roles according to roleList order.
@@ -50,7 +51,7 @@ async function createUser (req, reply) {
 
     await user.validate()
 
-    const password = generateStrongPassword()
+    const password = generteStrongPassword()
 
     const hash = await argon2.hash(password, { type: argon2.argon2id })
 
@@ -82,14 +83,14 @@ async function createUser (req, reply) {
 
     return user
   } catch (err) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Could not create user',
       detail: err.message,
       status: 500,
       instance: req.url,
     })
     console.error(err)
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -116,14 +117,14 @@ export async function getUsers (req, reply) {
       docCount,
      }
   } catch (err) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Could not get users.',
       detail: err.message,
       status: 500,
       instance: req.url,
     })
     console.error(err)
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -134,26 +135,26 @@ async function getUserById (req, reply) {
   try {
     const user = await Users.findOne(({ _id: userId })).lean()
     if (!user) {
-      const error = CustomError.toJSON({
+      const error = new CustomError({
         title: '!! User not found',
         detail: 'The user you are looking for does not exist.',
         status: 404,
         instance: req.url,
       })
-      return reply.status(error.status).send(error)
+      return reply.status(error.status).send(error.toJSON())
     }
 
 
     return user
   } catch (err) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Could not get user.',
       detail: err.message,
       status: 500,
       instance: req.url,
     })
     console.error(err)
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -173,25 +174,25 @@ async function updateUser (req, reply) {
   }
 
   if (roles.length === 0) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Roles are required',
       detail: 'Roles are required to update a user.',
       status: 400,
     })
 
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 
   try {
     const isExistingUser = await Users.findOne({ email }).lean()
     if (isExistingUser?.email === email) {
-      const error = CustomError.toJSON({
+      const error = new CustomError({
         title: '!! User already exists',
         detail: 'An user with this email already exists.',
         status: 409,
       })
 
-      return reply.status(error.status).send(error)
+      return reply.status(error.status).send(error.toJSON())
     }
 
     const sysuser = await Users.findOneAndUpdate(
@@ -200,12 +201,12 @@ async function updateUser (req, reply) {
       { new: true, updatedBy: req.user.id, },
     )
     if (!sysuser) {
-      const error = CustomError.toJSON({
+      const error = new CustomError({
         title: '!! Sysuser not found',
         detail: 'The sysuser you are looking for does not exist.',
         status: 404,
       })
-      return reply.status(error.status).send(error)
+      return reply.status(error.status).send(error.toJSON())
     }
 
     return sysuser
@@ -219,12 +220,12 @@ async function updateUser (req, reply) {
 async function deleteUser (req, reply) {
   const { userId } = req.params
   if (!userId) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! User ID is required',
       detail: 'User ID is required to delete a user.',
       status: 400,
     })
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 
   try {
@@ -236,7 +237,7 @@ async function deleteUser (req, reply) {
 
     return { message: 'OK' }
   } catch (err) {
-    const error = CustomError.toJSON({
+    const error = new CustomError({
       title: '!! Could not delete user',
       detail: err.message,
       status: 500,
@@ -244,7 +245,7 @@ async function deleteUser (req, reply) {
     })
 
     console.error(err)
-    return reply.status(error.status).send(error)
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 

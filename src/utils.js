@@ -13,20 +13,24 @@ export function getParsedDate (date) {
 // This custom Error class is used to handle errors in the API.
 // https://www.rfc-editor.org/rfc/rfc7807
 export class CustomError extends Error {
-  static toJSON ({
-    title = 'Error',
-    detail = '',
-    status = 500,
-    type = 'about:blank',
-    instance = ''
-    })
-  {
+  constructor ({ title, detail, status, type, instance }) {
+    super(title)
+    this.name = this.constructor.name
+    this.title = title
+    this.detail = detail
+    this.status = status
+    this.type = type
+    this.instance = instance
+  }
+
+  toJSON () {
     return {
-      title,
-      detail,
-      status,
-      type,
-      instance,
+      name: this.name,
+      title: this.title,
+      detail: this.detail,
+      status: this.status,
+      type: this.type || 'about:blank',
+      instance: this.instance,
     }
   }
 }
