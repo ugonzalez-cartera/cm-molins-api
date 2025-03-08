@@ -3,7 +3,13 @@
 import dayjs from 'dayjs'
 import 'dayjs/locale/es.js'
 
-export function getParsedDate (date) {
+// --------------------
+/**
+ * Parses a date and returns the month and year.
+ * @param {string|Date} date - The date to parse.
+ * @returns {{month: string, year: string}} The parsed month and year.
+ */
+export function getParsedDate(date) {
   const month = dayjs(date).locale('es').format('MMMM').toUpperCase()
   const year = dayjs(date).format('YYYY')
   return { month, year }
@@ -12,8 +18,21 @@ export function getParsedDate (date) {
 // --------------------
 // This custom Error class is used to handle errors in the API.
 // https://www.rfc-editor.org/rfc/rfc7807
+
+/**
+ * Custom error class for API errors.
+ */
 export class CustomError extends Error {
-  constructor ({ title, detail, status, type, instance }) {
+  /**
+   * Creates a new CustomError.
+   * @param {Object} params - The error parameters.
+   * @param {string} params.title - The error title.
+   * @param {string} params.detail - The error detail.
+   * @param {number} params.status - The HTTP status code.
+   * @param {string} [params.type] - The error type.
+   * @param {string} [params.instance] - The error instance.
+   */
+  constructor({ title, detail, status, type = 'about:blank', instance = '' }) {
     super(title)
     this.name = this.constructor.name
     this.title = title
@@ -23,7 +42,11 @@ export class CustomError extends Error {
     this.instance = instance
   }
 
-  toJSON () {
+  /**
+   * Converts the error to a JSON object.
+   * @returns {Object} The JSON representation of the error.
+   */
+  toJSON() {
     return {
       name: this.name,
       title: this.title,
@@ -32,5 +55,12 @@ export class CustomError extends Error {
       type: this.type || 'about:blank',
       instance: this.instance,
     }
+  }
+
+  /**
+   * Prints the error to the console.
+   */
+  print() {
+    console.error(this.toJSON())
   }
 }

@@ -23,6 +23,7 @@ async function createUser (req, reply) {
       detail: 'Email is required to create a new user.',
       status: 400,
     })
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 
@@ -35,7 +36,7 @@ async function createUser (req, reply) {
         status: 409,
         instance: req.url,
       })
-
+      error.print()
       return reply.status(error.status).send(error.toJSON())
     }
 
@@ -52,13 +53,11 @@ async function createUser (req, reply) {
     await user.validate()
 
     const password = generateStrongPassword()
-
     const hash = await argon2.hash(password, { type: argon2.argon2id })
 
     const payload = {
       sub: user._id,
     }
-
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.newUserTokenExpiration })
 
     const newUserMeta = new UsersMetadata({ _id: user._id, password: hash, verificationToken: token })
@@ -89,7 +88,7 @@ async function createUser (req, reply) {
       status: 500,
       instance: req.url,
     })
-    console.error(err)
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 }
@@ -123,7 +122,7 @@ export async function getUsers (req, reply) {
       status: 500,
       instance: req.url,
     })
-    console.error(err)
+    error.print()
     reply.status(error.status).send(error.toJSON())
   }
 }
@@ -141,6 +140,7 @@ async function getUserById (req, reply) {
         status: 404,
         instance: req.url,
       })
+      error.print()
       return reply.status(error.status).send(error.toJSON())
     }
 
@@ -153,7 +153,7 @@ async function getUserById (req, reply) {
       status: 500,
       instance: req.url,
     })
-    console.error(err)
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 }
@@ -179,7 +179,7 @@ async function updateUser (req, reply) {
       detail: 'Roles are required to update a user.',
       status: 400,
     })
-
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 
@@ -191,14 +191,14 @@ async function updateUser (req, reply) {
         detail: 'An user with this email already exists.',
         status: 409,
       })
-
+      error.print()
       return reply.status(error.status).send(error.toJSON())
     }
 
     const sysuser = await Users.findOneAndUpdate(
       { _id: userId },
       { $set: newData },
-      { new: true, updatedBy: req.user.id, },
+      { new: true, updatedBy: req.user.id },
     )
     if (!sysuser) {
       const error = new CustomError({
@@ -206,13 +206,20 @@ async function updateUser (req, reply) {
         detail: 'The sysuser you are looking for does not exist.',
         status: 404,
       })
+      error.print()
       return reply.status(error.status).send(error.toJSON())
     }
 
     return sysuser
   } catch (err) {
-    console.error(' !! Could not update sysuser', err)
-    return reply.internalServerError(err)
+    const error = new CustomError({
+      title: '!! Could not update user',
+      detail: err.message,
+      status: 500,
+      instance: req.url,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -225,6 +232,7 @@ async function deleteUser (req, reply) {
       detail: 'User ID is required to delete a user.',
       status: 400,
     })
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 
@@ -243,8 +251,7 @@ async function deleteUser (req, reply) {
       status: 500,
       instance: req.url,
     })
-
-    console.error(err)
+    error.print()
     return reply.status(error.status).send(error.toJSON())
   }
 }
