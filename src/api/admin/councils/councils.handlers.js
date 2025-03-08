@@ -4,6 +4,11 @@ import mongoose from 'mongoose'
 
 import {  uploadFile, deleteFile, deleteResourcesByPrefix, deleteFolder } from '../../../services/utils.service.js'
 
+import { CustomError } from '../../../utils.js'
+
+import councilsService from '../../../services/councils.service.js'
+import { sendNotificationEmail } from '../../../services/utils.service.js'
+
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
 import utc from 'dayjs/plugin/utc.js'
@@ -15,141 +20,31 @@ const Councils = mongoose.model('Council')
 const Users = mongoose.model('User')
 const ChangeLogs = mongoose.model('ChangeLog')
 
-import { sendNotificationEmail } from '../../../services/utils.service.js'
-
 const currentEnv = process.env.NODE_ENV
 
 // --------------------
 async function createCouncil (req, reply) {
-  const {  id: userId } = req.user
-  const additionalDocs = []
-  let reportFile = {}
-  let agendaFile = {}
-  let filesToUpload = 0
-
-  let month, year, agenda, newDate
-
   let newCouncil
 
   try {
     if (req.isMultipart()) {
       const parts = req.files()
-      for await (const part of parts) {
-        if (part.file && part.fieldname === 'councilAdditionalDocs') {
-          // Get part format.
-          const format = part.mimetype
-          if (format !== 'application/pdf') {
-            const error = this.httpErrors.badRequest('Only PDF files are allowed.')
-            error.code = 'invalid-format'
-            return reply.send(error)
-          }
-
-          filesToUpload +=1
-          if (filesToUpload > 3) {
-            const error = this.httpErrors.badRequest('Max allowed files are 3.')
-            error.code = 'max-allowed-files'
-            return reply.send(error)
-          }
-        }
-
-        const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
-        const { date, agenda: councilAgenda } = councilData
-        if (!date) return reply.badRequest('Missing required fields.')
-
-        agenda = councilAgenda
-        month = dayjs(date).month()
-        year = dayjs(date).year()
-        newDate = dayjs(date).startOf('day').utc(true).toISOString()
-
-        const isExistingCouncil = await Councils.findOne({ year, month })
-        if (isExistingCouncil) return reply.conflict('Council already exists')
-
-        const buffer = await part.toBuffer()
-        let dir
-        switch (part.fieldname) {
-          case 'councilAdditionalDocs':
-            dir = 'additional-docs'
-            break
-          case 'councilReport':
-            dir = 'report'
-            break
-          default:
-            dir = 'agenda'
-        }
-
-        const folder = `${currentEnv}-carteracm/councils/${month}-${year}/${dir}`
-        const uploadedFile = await uploadFile(buffer, folder, part.filename)
-
-
-        if (part.fieldname === 'councilAdditionalDocs') {
-          additionalDocs.push({
-            secureUrl: uploadedFile.secure_url,
-            publicId: uploadedFile.public_id
-          })
-        }
-
-        if (part.fieldname === 'councilReport') {
-          reportFile = {
-            secureUrl: uploadedFile.secure_url,
-            publicId: uploadedFile.public_id
-          }
-        }
-
-        if (part.fieldname === 'councilAgenda') {
-          agendaFile = {
-            secureUrl: uploadedFile.secure_url,
-            publicId: uploadedFile.public_id
-          }
-        }
-      }
-
-      const agendaDescription = agenda && {  description: agenda.description?.replace(/(?:\r\n|\r|\n)/g, '<br>') }
-      const newAgenda = agendaFile ? { file: agendaFile, ...agendaDescription } : agendaDescription
-
-      newCouncil = new Councils({
-        year,
-        month,
-        date: newDate,
-        report: reportFile,
-        docs: additionalDocs.length > 0 ? additionalDocs : undefined,
-        agenda: newAgenda,
-      })
+      newCouncil = await councilsService.createCouncilWithFiles(parts)
     } else {
       const { date, agenda } = req.body || {}
-      if (!date) return reply.badRequest('Missing required fields.')
-
-      const parsedAgenda = agenda?.replace(/(?:\r\n|\r|\n)/g, '<br>')
-      month = dayjs(date).month()
-      year = dayjs(date).year()
-      newDate = dayjs(date).startOf('day').utc(true).toISOString()
-
-      const isExistingCouncil = await Councils.exists({ year, month })
-      if (isExistingCouncil) return reply.conflict('Council already exists')
-
-      newCouncil = new Councils({
-        year,
-        month,
-        date: newDate,
-        agenda: {
-          description: parsedAgenda
-        },
-      })
+      newCouncil = await councilsService.createCouncilRegular({ date, agenda })
     }
-
-
-    newCouncil.updatedBy = userId
-
-    await newCouncil.save({ updatedBy: userId })
 
     return newCouncil
   } catch (err) {
-    if (err.code === 11000) {
-      // Duplicate key error code.
-      reply.code(409).send({ error: 'Council already exists' })
-    } else {
-      console.error(' !! Could not create council.', err)
-      reply.internalServerError(err)
-    }
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -171,16 +66,27 @@ async function deleteCouncilYear (req, reply) {
           await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
           await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
         } catch (innerErr) {
-          console.error(' !! Could not delete folder or resource.', innerErr)
+          const error = new CustomError({
+            title: 'Error deleting folder or resource',
+            detail: innerErr.detail,
+            status: 500,
+          })
+          error.print()
+          reply.status(error.status).send(error.toJSON())
         }
       }
     }
 
-
-    return { msg: 'OK' }
+    return { message: 'OK' }
   } catch (err) {
-    console.error(' !! Could not delete council year.', councilYear, err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -190,20 +96,41 @@ async function deleteCouncil (req, reply) {
 
   try {
     const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot delete a council that does not exist.',
+        status: 404,
+        instance: req.url,
+      })
+      error.print()
+      reply.status(error.status).send(error)
+    }
 
     if (council.report?.publicId || council.docs.length > 0) {
       try {
         await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
         await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
       } catch (innerErr) {
-        console.error(' !! Could not delete folder or resource.', innerErr)
+        const error = new CustomError({
+          title: innerErr.title || 'Error deleting folder or resource',
+          detail: innerErr.detail,
+          status: 500,
+        })
+        error.print()
       }
     }
 
-    return 'OK'
+    return { message: 'OK' }
   } catch (err) {
-    console.error(' !! Could not delete council bucket.', councilId, err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error)
   }
 }
 
@@ -211,22 +138,25 @@ async function deleteCouncil (req, reply) {
 async function updateCouncil (req, reply) {
   const { id: userId } = req.user
   const { councilId } = req.params
-  const { agenda, minutes, date } = req.body || {}
 
+  const { agenda, minutes, date } = req.body || {}
   const year = dayjs(date).year()
   const month = dayjs(date).month()
-  const update = {
-    agenda,
-    minutes,
-    date,
-    year,
-    month
-  }
+  const update = { agenda, minutes, date, year, month }
 
   try {
-    const existingCouncil = await Councils.findOne({ month }).lean()
+    const existingCouncil = await Councils.findOne({ year, month }).lean()
     if (existingCouncil) {
-      if (existingCouncil._id !== councilId) return reply.conflict('Council already exists.')
+      if (existingCouncil._id !== councilId) {
+        const error = new CustomError({
+          title: 'Council already exists',
+          detail: 'Cannot create a council in an existing month.',
+          status: 409,
+          instance: req.url,
+        })
+        error.print()
+        return reply.status(error.status).send(error)
+      }
     }
 
     const council = await Councils.findOneAndUpdate(
@@ -234,13 +164,27 @@ async function updateCouncil (req, reply) {
       { $set: update },
       { new: true, updatedBy: userId }
     )
-
-    if (!council) return reply.notFound('Council not found.')
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist.',
+        status: 404,
+        instance: req.url,
+      })
+      error.print()
+      return reply.status(error.status).send(error)
+    }
 
     return council
   } catch (err) {
-    console.error(' !! Could not delete council year.', councilId, err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error)
   }
 }
 
@@ -249,17 +193,21 @@ async function deleteCouncilReport (req, reply) {
   const { councilId } = req.params
 
   try {
-
     const council = await Councils.findOneAndUpdate({ _id: councilId }, { $unset: { report: 0 } })
-
     if (council.report?.publicId) {
       deleteFile(council.report.publicId)
     }
 
-    return 'OK'
+    return { message: 'OK' }
   } catch (err) {
-    console.error(' !! Could not delete council report.', err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error)
   }
 }
 
@@ -270,19 +218,25 @@ async function updateCouncilFileResource (req, reply) {
 
   try {
     const council = await Councils.findOne({ _id: councilId })
-    if (!council) return reply.notFound('Council not found.')
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist.',
+        status: 404,
+        instance: req.url,
+      })
+      error.print()
+      return reply.status(error.status).send(error)
+    }
 
     const file = await req?.file()
 
     let uploadedFile
     if (file) {
       const councilFile = file.fields.councilFile
-
       const buffer = await file.fields.councilFile.toBuffer()
-
-      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/${resource}`
+      const folder = councilsService.getFolderName(council.month, council.year, resource)
       uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
-
       if (council[resource]?.publicId) {
         deleteFile(council[resource].publicId)
       }
@@ -302,8 +256,14 @@ async function updateCouncilFileResource (req, reply) {
       { updatedBy: userId }
     )
   } catch (err) {
-    console.error(' !! Could not update council file resource.', err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'Internal Server Error',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    reply.status(error.status).send(error)
   }
 }
 
@@ -312,10 +272,17 @@ async function deleteCouncilFileResource (req, reply) {
   const { councilId, resource } = req.params
 
   try {
-    const council = await Councils.findOne
-      ({ _id: councilId })
-
-    if (!council) return reply.notFound('Council not found.')
+    const council = await Councils.findOne({ _id: councilId }).lean()
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot delete a resource from a council that does not exist.',
+        status: 404,
+        instance: req.url,
+      })
+      error.print()
+      return reply.status(error.status).send(error)
+    }
 
     if (council[resource]?.file?.publicId) {
       deleteFile(council[resource].file.publicId)
@@ -326,7 +293,7 @@ async function deleteCouncilFileResource (req, reply) {
       { $unset: { [`${resource}.file`]: 0 } }
     )
 
-    return 'OK'
+    return { message: 'OK' }
   } catch (err) {
     console.error(' !! Could not delete council file resource.', err)
     reply.internalServerError(err)
@@ -340,17 +307,24 @@ async function updateCouncilReport (req, reply) {
 
   try {
     const council = await Councils.findOne({ _id: councilId })
-    if (!council) return reply.notFound('Council not found.')
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist.',
+        status: 404,
+        instance: req.url,
+      })
+      error.print()
+      return reply.status(error.status).send(error)
+    }
 
     const file = await req?.file()
-
     let uploadedFile
     if (file) {
       const councilReportFile = file.fields.councilReportFile
 
       const buffer = await file.fields.councilReportFile.toBuffer()
-
-      const folder = `${currentEnv}-carteracm/councils/${council.month}-${council.year}/report`
+      const folder = councilsService.getFolderName(council.month, council.year, 'report')
       uploadedFile = await uploadFile(buffer, folder, councilReportFile.filename)
 
       if (council.report?.publicId) {
@@ -397,12 +371,11 @@ async function deleteCouncilDoc (req, reply) {
       { new: true, updatedBy: userId },
     )
 
-
     if (!council) return reply.notFound('Council not found.')
 
     deleteFile(decodedDocId)
 
-    return 'OK'
+    return { message: 'OK' }
 
   } catch (err) {
     console.error(' !! Could not delete council doc.', err)
@@ -434,7 +407,6 @@ async function createCouncilDocs (req, reply) {
           error.code = 'invalid-format'
           return reply.send(error)
         }
-
 
         filesToUpload +=1
         if (filesToUpload > 3) {

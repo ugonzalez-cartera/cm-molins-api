@@ -32,7 +32,7 @@ export class CustomError extends Error {
    * @param {string} [params.type] - The error type.
    * @param {string} [params.instance] - The error instance.
    */
-  constructor({ title, detail, status, type = 'about:blank', instance = '' }) {
+  constructor({ title, detail, status, type = 'about:blank', instance = '', code = '' }) {
     super(title)
     this.name = this.constructor.name
     this.title = title
@@ -40,6 +40,7 @@ export class CustomError extends Error {
     this.status = status
     this.type = type
     this.instance = instance
+    this.code = code
   }
 
   /**
@@ -54,6 +55,7 @@ export class CustomError extends Error {
       status: this.status,
       type: this.type || 'about:blank',
       instance: this.instance,
+      code: this.code,
     }
   }
 

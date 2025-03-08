@@ -22,12 +22,16 @@ const CouncilSchema = new Schema({
   agenda: {
     description: { type: String },
     file: { type: FileSchema },
-   },
+  },
   call: { type: CallSchema },
   year: {  type: Number, required: true },
   month: { type: Number, required: true },
   date: { type: Date, required: true },
-  report: { type: FileSchema },
+  report: {
+    file: {
+      type: FileSchema,
+    },
+  },
   docs: { type: [FileSchema], default: [] },
 },
 {

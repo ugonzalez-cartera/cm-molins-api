@@ -45,12 +45,12 @@ export async function sendNotificationEmail (emailData) {
 
     const { data } = await axios.post(config.brevo.endpoint,
       dataToSend,
-    {
-      headers: {
-        'api-key': `${process.env.BREVO_API_KEY}`,
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
+      {
+        headers: {
+          'api-key': `${process.env.BREVO_API_KEY}`,
+          Accept: 'application/json',
+          'Content-Type': 'application/json',
+        },
       })
 
     return data

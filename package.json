@@ -13,6 +13,7 @@
   "author": "Unai González Escalante",
   "license": "ISC",
   "devDependencies": {
+    "eslint": "^9.22.0",
     "nodemon": "^3.1.9",
     "pino-colada": "^2.2.2"
   },

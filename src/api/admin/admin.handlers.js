@@ -10,7 +10,7 @@ export async function getChangelogs (req, reply) {
 
   const changeLogs = await ChangeLogs.findOne({ _id: logId }).lean()
 
-  if (!changeLogs) return reply.notFound('Changelog not found.')
+  if (!changeLogs) return { docs: [], changesCount: 0 }
 
   const populatedLogs = []
   for (const log of changeLogs.changes) {
