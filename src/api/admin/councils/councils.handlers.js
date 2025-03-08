@@ -6,7 +6,7 @@ import {  uploadFile, deleteFile } from '../../../services/utils.service.js'
 
 import { CustomError } from '../../../utils.js'
 
-import councilsService from '../../../services/councils.service.js'
+import councilsService from './councils.service.js'
 import { sendNotificationEmail } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'

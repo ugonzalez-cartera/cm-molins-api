@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
-import { CustomError } from '../utils.js'
-import { uploadFile, deleteFolder, deleteResourcesByPrefix } from './utils.service.js'
+import { CustomError } from '../../../utils.js'
+import { uploadFile, deleteFolder, deleteResourcesByPrefix } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
