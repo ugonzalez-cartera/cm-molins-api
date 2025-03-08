@@ -51,7 +51,7 @@ async function createUser (req, reply) {
 
     await user.validate()
 
-    const password = generteStrongPassword()
+    const password = generateStrongPassword()
 
     const hash = await argon2.hash(password, { type: argon2.argon2id })
 
