@@ -20,7 +20,7 @@ async function createUser (req, reply) {
   if (!email) {
     const error = new CustomError({
       title: '!! Email is required',
-      detail: 'Email is required to create a new user.',
+      detail: 'Email is required to create a new user',
       status: 400,
     })
     error.print()
@@ -32,7 +32,7 @@ async function createUser (req, reply) {
     if (isExistingUser) {
       const error = new CustomError({
         title: '!! User already exists',
-        detail: 'An user with this email already exists.',
+        detail: 'An user with this email already exists',
         status: 409,
         instance: req.url,
       })
@@ -83,9 +83,9 @@ async function createUser (req, reply) {
     return user
   } catch (err) {
     const error = new CustomError({
-      title: '!! Could not create user',
-      detail: err.message,
-      status: 500,
+      title: err.title || '!! Could not create user',
+      detail: err.detail || err.message,
+      status: err.code || 500,
       instance: req.url,
     })
     error.print()
@@ -114,12 +114,12 @@ export async function getUsers (req, reply) {
     return {
       docs,
       docCount,
-     }
+    }
   } catch (err) {
     const error = new CustomError({
-      title: '!! Could not get users.',
-      detail: err.message,
-      status: 500,
+      title: '!! Could not get users',
+      detail: err.detail || err.message,
+      status: err.status || 500,
       instance: req.url,
     })
     error.print()
@@ -136,7 +136,7 @@ async function getUserById (req, reply) {
     if (!user) {
       const error = new CustomError({
         title: '!! User not found',
-        detail: 'The user you are looking for does not exist.',
+        detail: 'The user you are looking for does not exist',
         status: 404,
         instance: req.url,
       })
@@ -144,13 +144,12 @@ async function getUserById (req, reply) {
       return reply.status(error.status).send(error.toJSON())
     }
 
-
     return user
   } catch (err) {
     const error = new CustomError({
-      title: '!! Could not get user.',
-      detail: err.message,
-      status: 500,
+      title: '!! Could not get user',
+      detail: err.detail || err.message,
+      status: err.status || 500,
       instance: req.url,
     })
     error.print()
@@ -176,7 +175,7 @@ async function updateUser (req, reply) {
   if (roles.length === 0) {
     const error = new CustomError({
       title: '!! Roles are required',
-      detail: 'Roles are required to update a user.',
+      detail: 'Roles are required to update a user',
       status: 400,
     })
     error.print()
@@ -188,7 +187,7 @@ async function updateUser (req, reply) {
     if (isExistingUser?.email === email) {
       const error = new CustomError({
         title: '!! User already exists',
-        detail: 'An user with this email already exists.',
+        detail: 'An user with this email already exists',
         status: 409,
       })
       error.print()
@@ -203,7 +202,7 @@ async function updateUser (req, reply) {
     if (!sysuser) {
       const error = new CustomError({
         title: '!! Sysuser not found',
-        detail: 'The sysuser you are looking for does not exist.',
+        detail: 'The sysuser you are looking for does not exist',
         status: 404,
       })
       error.print()
@@ -213,9 +212,9 @@ async function updateUser (req, reply) {
     return sysuser
   } catch (err) {
     const error = new CustomError({
-      title: '!! Could not update user',
-      detail: err.message,
-      status: 500,
+      title: err.title || '!! Could not update user',
+      detail: err.detail || err.message,
+      status: err.status || 500,
       instance: req.url,
     })
     error.print()
@@ -229,7 +228,7 @@ async function deleteUser (req, reply) {
   if (!userId) {
     const error = new CustomError({
       title: '!! User ID is required',
-      detail: 'User ID is required to delete a user.',
+      detail: 'User ID is required to delete a user',
       status: 400,
     })
     error.print()
@@ -246,9 +245,9 @@ async function deleteUser (req, reply) {
     return { message: 'OK' }
   } catch (err) {
     const error = new CustomError({
-      title: '!! Could not delete user',
-      detail: err.message,
-      status: 500,
+      title: err.title || '!! Could not delete user',
+      detail: err.detail || err.message,
+      status: err.status || 500,
       instance: req.url,
     })
     error.print()
