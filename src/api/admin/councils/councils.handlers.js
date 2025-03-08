@@ -376,9 +376,7 @@ async function createCouncilCall (req, reply) {
       error.print()
       return reply.status(error.status).send(error)
     }
-
-    const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
-    councilsService.sendCouncilCallEmail(council, counselors, origin)
+    councilsService.sendCouncilCallEmail(council, origin)
 
     return council
   } catch (err) {

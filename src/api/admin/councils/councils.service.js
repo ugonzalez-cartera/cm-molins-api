@@ -14,6 +14,7 @@ const currentEnv = process.env.NODE_ENV
 
 const Councils = mongoose.model('Council')
 const ChangeLogs = mongoose.model('ChangeLog')
+const Users = mongoose.model('User')
 
 // --------------------
 function validateCouncilPart (mimetype, hasReachedMaxFiles) {
@@ -223,25 +224,36 @@ async function deleteCouncil (council) {
 }
 
 // --------------------
-function sendCouncilCallEmail (council, counselors, origin) {
-  const emailData = {
-    templateId: 3,
-    description: council.call.description,
-    body: council.agenda.description,
-    title: council.call.title,
-    subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
-  }
+async function sendCouncilCallEmail (council, origin) {
+  try {
+    const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
 
-  for (const counselor of counselors) {
-    Object.assign(emailData,  {
-      name: counselor.givenName.toUpperCase(),
-      familyName: counselor.familyName.toUpperCase(),
-      email: counselor.email,
-      locale: counselor.country,
-      ctaLink: origin,
+    const emailData = {
+      templateId: 3,
+      description: council.call.description,
+      body: council.agenda.description,
+      title: council.call.title,
+      subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
+    }
+
+    for (const counselor of counselors) {
+      Object.assign(emailData,  {
+        name: counselor.givenName.toUpperCase(),
+        familyName: counselor.familyName.toUpperCase(),
+        email: counselor.email,
+        locale: counselor.country,
+        ctaLink: origin,
+      })
+
+      sendNotificationEmail(emailData)
+    }
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error sending council call email',
+      detail: err.detail,
+      status: err.status || 500,
     })
-
-    sendNotificationEmail(emailData)
+    throw error
   }
 }
 
