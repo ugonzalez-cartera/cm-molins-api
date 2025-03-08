@@ -31,6 +31,7 @@ export class CustomError extends Error {
    * @param {number} params.status - The HTTP status code.
    * @param {string} [params.type] - The error type.
    * @param {string} [params.instance] - The error instance.
+   * @param {string} [params.code] - The error code.
    */
   constructor({ title, detail, status, type = 'about:blank', instance = '', code = '' }) {
     super(title)

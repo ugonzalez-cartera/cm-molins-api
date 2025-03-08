@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 import { CustomError } from '../utils.js'
-import { uploadFile } from './utils.service.js'
+import { uploadFile, deleteFolder, deleteResourcesByPrefix } from './utils.service.js'
 
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -13,6 +13,7 @@ dayjs.extend(timezone)
 const currentEnv = process.env.NODE_ENV
 
 const Councils = mongoose.model('Council')
+const ChangeLogs = mongoose.model('ChangeLog')
 
 // --------------------
 function validateCouncilPart (mimetype, hasReachedMaxFiles) {
@@ -23,7 +24,6 @@ function validateCouncilPart (mimetype, hasReachedMaxFiles) {
       status: 400,
       code: 'invalid-format',
     })
-    error.print()
     throw error
   }
 
@@ -34,7 +34,6 @@ function validateCouncilPart (mimetype, hasReachedMaxFiles) {
       status: 400,
       code: 'max-allowed-files',
     })
-    error.print()
     throw error
   }
 }
@@ -145,6 +144,7 @@ async function createCouncilWithFiles (parts) {
       title: err.title || 'Error uploading files',
       detail: err.detail,
       status: err.status || 500,
+      code: err.code,
     })
     throw error
   }
@@ -189,10 +189,41 @@ async function createCouncilRegular ({ date, agenda }) {
   }
 }
 
+async function deleteCouncil (council) {
+  try {
+    await Promise.all([
+      ChangeLogs.deleteOne({ _id: council._id }),
+      Councils.deleteOne({ _id: council._id }),
+    ])
+
+    if (council.report?.publicId || council.docs.length > 0) {
+      try {
+        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      } catch (innerErr) {
+        const error = new CustomError({
+          title: innerErr.title || 'Error deleting folder or resource',
+          detail: innerErr.detail,
+          status: innerErr.status,
+        })
+        throw error
+      }
+    }
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error deleting council',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
 export default {
   validateCouncilPart,
   getDirName,
   getFolderName,
   createCouncilWithFiles,
   createCouncilRegular,
+  deleteCouncil,
 }
