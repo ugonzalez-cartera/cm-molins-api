@@ -61,6 +61,10 @@ export class CustomError extends Error {
    * Prints the error to the console.
    */
   print() {
-    console.error(this.toJSON())
+    console.error(
+      `\n =================== \n` +
+      `${JSON.stringify(this.toJSON(), null, 2)}` +
+      `\n =================== \n`
+    )
   }
 }
