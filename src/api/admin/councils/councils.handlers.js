@@ -360,17 +360,6 @@ async function createCouncilCall (req, reply) {
   const { councilId } = req.params
   const callData = req.body
 
-  if (!councilId || !callData) {
-    const error = new CustomError({
-      title: 'Invalid request',
-      detail: 'Council ID and call data are required.',
-      status: 400,
-      instance: req.url,
-    })
-    error.print()
-    return reply.status(error.status).send(error)
-  }
-
   try {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
@@ -388,27 +377,8 @@ async function createCouncilCall (req, reply) {
       return reply.status(error.status).send(error)
     }
 
-    const emailData = {
-      templateId: 3,
-      description: council.call.description,
-      body: council.agenda.description,
-      title: council.call.title,
-      subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
-    }
-
     const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
-
-    for (const counselor of counselors) {
-      Object.assign(emailData,  {
-        name: counselor.givenName.toUpperCase(),
-        familyName: counselor.familyName.toUpperCase(),
-        email: counselor.email,
-        locale: counselor.country,
-        ctaLink: origin,
-      })
-
-      sendNotificationEmail(emailData)
-    }
+    councilsService.sendCouncilCallEmail(council, counselors, origin)
 
     return council
   } catch (err) {

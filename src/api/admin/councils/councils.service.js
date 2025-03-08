@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 import { CustomError } from '../../../utils.js'
-import { uploadFile, deleteFolder, deleteResourcesByPrefix } from '../../../services/utils.service.js'
+import { uploadFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -66,6 +66,7 @@ async function validateCouncilExists (year, month) {
   }
 }
 
+// --------------------
 async function createCouncilWithFiles (parts) {
   try {
     const additionalDocs = []
@@ -150,6 +151,7 @@ async function createCouncilWithFiles (parts) {
   }
 }
 
+// --------------------
 async function createCouncilRegular ({ date, agenda }) {
   if (!date) {
     const error = new CustomError({
@@ -189,6 +191,7 @@ async function createCouncilRegular ({ date, agenda }) {
   }
 }
 
+// --------------------
 async function deleteCouncil (council) {
   try {
     await Promise.all([
@@ -219,6 +222,29 @@ async function deleteCouncil (council) {
   }
 }
 
+// --------------------
+function sendCouncilCallEmail (council, counselors, origin) {
+  const emailData = {
+    templateId: 3,
+    description: council.call.description,
+    body: council.agenda.description,
+    title: council.call.title,
+    subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
+  }
+
+  for (const counselor of counselors) {
+    Object.assign(emailData,  {
+      name: counselor.givenName.toUpperCase(),
+      familyName: counselor.familyName.toUpperCase(),
+      email: counselor.email,
+      locale: counselor.country,
+      ctaLink: origin,
+    })
+
+    sendNotificationEmail(emailData)
+  }
+}
+
 export default {
   validateCouncilPart,
   getDirName,
@@ -226,4 +252,5 @@ export default {
   createCouncilWithFiles,
   createCouncilRegular,
   deleteCouncil,
+  sendCouncilCallEmail,
 }
