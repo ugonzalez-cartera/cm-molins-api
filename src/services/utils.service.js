@@ -37,7 +37,7 @@ export async function sendNotificationEmail (emailData) {
     const dataToSend = {
       subject: `${subjectPrefix}${emailSubject}`,
       sender: { name: 'Cartera de inversiones C.M', email: 'carteracm@carteracm.com' },
-      replyTo: { name: 'Cartera de inversiones C.M', email: 'carteracm@carteracm.com.' },
+      replyTo: { name: 'Cartera de inversiones C.M', email: 'carteracm@carteracm.com' },
       to: [{ email: emailTo, name: nameTo }],
       templateId: emailData.templateId || config.brevo.template.notification,
       params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }] },
