@@ -28,9 +28,7 @@ const CouncilSchema = new Schema({
   month: { type: Number, required: true },
   date: { type: Date, required: true },
   report: {
-    file: {
-      type: FileSchema,
-    },
+    file: { type: FileSchema },
   },
   docs: { type: [FileSchema], default: [] },
 },

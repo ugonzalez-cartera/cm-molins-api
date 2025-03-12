@@ -183,8 +183,8 @@ async function updateUser (req, reply) {
   }
 
   try {
-    const isExistingUser = await Users.findOne({ email }).lean()
-    if (isExistingUser?.email === email) {
+    const isExistingUser = await Users.findOne({ _id: userId }).lean()
+    if (isExistingUser?.email !== email) {
       const error = new CustomError({
         title: '!! User already exists',
         detail: 'An user with this email already exists',

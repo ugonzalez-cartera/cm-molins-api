@@ -43,7 +43,6 @@ export async function updateOwnUser (req, reply) {
       user.isNotActive = isUserNotActive
     }
 
-
     await user.save({ updatedBy: userId })
 
     return user

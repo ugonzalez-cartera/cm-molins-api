@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 import { CustomError } from '../../../utils.js'
-import { uploadFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail } from '../../../services/utils.service.js'
+import { uploadFile, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail } from '../../../services/utils.service.js'
 
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -193,37 +193,6 @@ async function createCouncilRegular ({ date, agenda }) {
 }
 
 // --------------------
-async function deleteCouncil (council) {
-  try {
-    await Promise.all([
-      ChangeLogs.deleteOne({ _id: council._id }),
-      Councils.deleteOne({ _id: council._id }),
-    ])
-
-    if (council.report?.publicId || council.docs.length > 0) {
-      try {
-        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
-        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
-      } catch (innerErr) {
-        const error = new CustomError({
-          title: innerErr.title || 'Error deleting folder or resource',
-          detail: innerErr.detail,
-          status: innerErr.status,
-        })
-        throw error
-      }
-    }
-  } catch (err) {
-    const error = new CustomError({
-      title: err.title || 'Error deleting council',
-      detail: err.detail,
-      status: err.status || 500,
-    })
-    throw error
-  }
-}
-
-// --------------------
 async function sendCouncilCallEmail (council, origin) {
   try {
     const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
@@ -257,12 +226,300 @@ async function sendCouncilCallEmail (council, origin) {
   }
 }
 
+// --------------------
+async function deleteCouncilDoc (councilId, docId, userId) {
+  try {
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $pull: { docs: { publicId: docId } } },
+      { new: true, updatedBy: userId },
+    )
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'The council was not found',
+        status: 404,
+      })
+      throw error
+    }
+
+    deleteFile(docId)
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error deleting council doc',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function createCouncilDocs (councilId, parts, userId) {
+  const additionalDocs = []
+  let filesToUpload = 0
+
+  try {
+    const council = await Councils.findOne({ _id: councilId }).lean()
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot add docs to a council that does not exist.',
+        status: 404,
+      })
+      throw error
+    }
+
+    for await (const part of parts) {
+      if (part.file) {
+        filesToUpload += 1
+        validateCouncilPart(part.mimetype, filesToUpload > 3)
+      }
+
+      const buffer = await part.toBuffer()
+      const folder = getFolderName(council.month, council.year, 'additional-docs')
+      const uploadedFile = await uploadFile(buffer, folder, part.filename)
+
+      additionalDocs.push({
+        secureUrl: uploadedFile.secure_url,
+        publicId: uploadedFile.public_id
+      })
+    }
+
+    await Councils.updateOne(
+      { _id: councilId },
+      { $push: { docs: { $each: additionalDocs } } },
+      { updatedBy: userId }
+    )
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error creating council docs',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function createCouncilCall ({  councilId, callData, userId, origin }) {
+  try {
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $set: { call: callData } },
+      { new: true, updatedBy: userId },
+    )
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot create a call for a council that does not exist.',
+        status: 404,
+      })
+      throw error
+    }
+    sendCouncilCallEmail(council, origin)
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error creating council call',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function deleteCouncilFileResource (councilId, resource) {
+  try {
+    const council = await Councils.findOne({ _id: councilId }).lean()
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot delete a resource from a council that does not exist',
+        status: 404,
+      })
+      throw error
+    }
+
+    if (council[resource]?.file?.publicId) {
+      deleteFile(council[resource].file.publicId)
+    }
+
+    await Councils.updateOne(
+      { _id: councilId },
+      { $unset: { [`${resource}.file`]: 0 } }
+    )
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error deleting council file resource',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function updateCouncilFileResource ({ councilId, resource, file, userId }) {
+  try {
+    const council = await Councils.findOne({ _id: councilId })
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist',
+        status: 404,
+      })
+      throw error
+    }
+
+    let uploadedFile
+    if (file) {
+      const councilFile = file.fields.councilFile
+      const buffer = await councilFile.toBuffer()
+      const folder = getFolderName(council.month, council.year, resource)
+      uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
+      if (council[resource]?.publicId) {
+        deleteFile(council[resource].publicId)
+      }
+    }
+
+    let updatedFile
+    if (uploadedFile) {
+      updatedFile = {
+        secureUrl: uploadedFile.secure_url,
+        publicId: uploadedFile.public_id
+      }
+    }
+
+    await Councils.updateOne(
+      { _id: councilId },
+      { $set: { [`${resource}.file`]: updatedFile } },
+      { updatedBy: userId }
+    )
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error updating council file resource',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function updateCouncil (councilId, updatedCouncil, userId) {
+  const { year, month } = updatedCouncil
+
+  try {
+    const existingCouncil = await Councils.findOne({ year, month }).lean()
+    if (existingCouncil) {
+      if (existingCouncil._id !== councilId) {
+        const error = new CustomError({
+          title: 'Council already exists',
+          detail: 'Cannot create a council in an existing month.',
+          status: 409,
+        })
+        throw error
+      }
+    }
+
+    const council = await Councils.findOneAndUpdate(
+      { _id: councilId },
+      { $set: updatedCouncil },
+      { new: true, updatedBy: userId }
+    )
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist',
+        status: 404,
+      })
+      throw error
+    }
+
+    return council
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || '!! Could not update council',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function deleteCouncil (councilId) {
+  try {
+    const council = await Councils.findOneAndDelete({ _id: councilId }).lean()
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot delete a council that does not exist',
+        status: 404,
+      })
+      throw error
+    }
+
+    await Promise.all([
+      ChangeLogs.deleteOne({ _id: council._id }),
+      Councils.deleteOne({ _id: council._id }),
+    ])
+
+    if (council.report?.publicId || council.docs.length > 0) {
+      try {
+        await deleteResourcesByPrefix(`${currentEnv}-carteracm/councils/${council.month}-${council.year}/`)
+        await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
+      } catch (innerErr) {
+        const error = new CustomError({
+          title: innerErr.title || 'Error deleting folder or resource',
+          detail: innerErr.detail,
+          status: innerErr.status,
+        })
+        throw error
+      }
+    }
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Error deleting council',
+      detail: err.detail,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function deleteCouncilYear (year) {
+  try {
+    const councils = await Councils.find({ year })
+
+    for (const council of councils) {
+      await deleteCouncil(council)
+    }
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || '!! Could not delete council year',
+      detail: err.detail || err.message,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
 export default {
   validateCouncilPart,
   getDirName,
   getFolderName,
   createCouncilWithFiles,
   createCouncilRegular,
-  deleteCouncil,
   sendCouncilCallEmail,
+  createCouncilDocs,
+  deleteCouncilDoc,
+  createCouncilCall,
+  deleteCouncilFileResource,
+  updateCouncilFileResource,
+  updateCouncil,
+  deleteCouncil,
+  deleteCouncilYear,
 }
