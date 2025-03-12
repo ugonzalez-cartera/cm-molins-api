@@ -78,7 +78,7 @@ async function deleteCouncil (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -103,7 +103,7 @@ async function updateCouncil (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -123,7 +123,7 @@ async function updateCouncilFileResource (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -142,7 +142,7 @@ async function deleteCouncilFileResource (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -165,7 +165,7 @@ async function deleteCouncilDoc (req, reply) {
       instance: req.url,
       code: err.code,
     })
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -186,7 +186,7 @@ async function createCouncilDocs (req, reply) {
       code: err.code,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -203,7 +203,7 @@ async function getAvailableCallCouncils (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -225,7 +225,7 @@ async function createCouncilCall (req, reply) {
       instance: req.url,
     })
     error.print()
-    reply.status(error.status).send(error)
+    reply.status(error.status).send(error.toJSON())
   }
 }
 
