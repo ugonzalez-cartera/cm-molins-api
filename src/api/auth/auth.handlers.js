@@ -1,61 +1,35 @@
 'use strict'
 
-import argon2 from 'argon2'
-import jwt from 'jsonwebtoken'
-import mongoose from 'mongoose'
+import authorizationService from './auth.service.js'
 
-import config from '../../config.js'
-
-import { sendRequestResetPasswordEmail } from '../../services/notification.service.js'
-
-const UsersMetadata = mongoose.model('UserMetadata')
-const Users = mongoose.model('User')
+import { CustomError } from '../../utils.js'
 
 // --------------------
 export async function getToken (req, reply) {
   const { email, password } = req.body
-
-  if (!email || !password) return reply.badRequest('Email and password are required.')
+  if (!email || !password) {
+    const error = new CustomError({
+      title: '!! Invalid credentials',
+      detail: 'Email and password are required.',
+      status: 400,
+      instance: req.url
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
+  }
 
   try {
-    const user = await Users.findOne({ email })
-
-    if (!user || !user.roles) return reply.unauthorized('User not found.')
-
-    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+password').lean()
-    if (!userMeta) return reply.unauthorized('User not found.')
-
-    if (user.isNotActive) {
-      // If user account is not active, return forbidden.
-      console.error('  !! User is not active:', user)
-      return reply.forbidden('User is not active.')
-    }
-
-    const passwordsMatch = await argon2.verify(userMeta.password, password)
-    if (!passwordsMatch) return reply.unauthorized('Invalid password.')
-
-    const payload = {
-      sub: user._id,
-      roles: user.roles,
-    }
-
-    const refreshTokenPayload = {
-      sub: user._id,
-    }
-
-    const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
-    const refreshToken = jwt.sign(refreshTokenPayload, process.env.API_SECRET, { expiresIn: config.tokens.refreshTokenExpiration })
-
-    // Update lastSessionAt for user.
-    user.lastSessionAt = new Date()
-    await user.save()
-
-    console.info(' --> Access token for', user._id, user.roles)
-
-    return reply.send({ token, refreshToken })
+    const { token, refreshToken } = await authorizationService.getAuthToken({ email, password })
+    return { token, refreshToken }
   } catch (err) {
-    console.error(` !! Unauthorized login attempt for: ${email}.`, err)
-    return reply.unauthorized(err)
+    const error = new CustomError({
+      title: err.title || ` !! Unauthorized login attempt for: ${email}.`,
+      detail: err.detail || 'Exception error',
+      status: err.status || 401,
+      instance: req.url,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -63,48 +37,27 @@ export async function getToken (req, reply) {
 export async function refreshToken (req, reply) {
   const { refreshToken } = req.body
   if (!refreshToken) {
-    console.error(' !! Refresh token is required.')
-    return reply.badRequest('Refresh token is required.')
+    const error = new CustomError({
+      title: '!! Refresh token is required',
+      detail: 'A refersh token is required',
+      status: 400,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 
-
   try {
-    // Decode the received refresh token *not* the one passed via Authorization header.
-    const { sub } = jwt.verify(refreshToken, process.env.API_SECRET)
-
-    const user = await Users.findOne({ _id: sub }).select('_id roles isNotActive')
-
-    if (!user || !user.roles) return reply.unauthorized('User not found.')
-
-    const userMeta = await UsersMetadata.findOne({ _id: sub })
-    if (!userMeta) {
-      console.error(`  !! Unauthorized refresh token attempt for ${sub} - User metadata not found.`)
-      return reply.notFound('User metadata not found.')
-    }
-
-    if (user.isNotActive) {
-      // If user account is not active, return forbidden.
-      console.error('  !! User is not active:', user)
-      return reply.forbidden('User is not active.')
-    }
-
-    const payload = {
-      sub: user._id,
-      roles: user.roles,
-    }
-
-    const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
-
-    // Update lastSessionAt info on user.
-    user.lastSessionAt = new Date()
-    await user.save()
-
-    console.info(' Refresh token for:', user._id, user.roles)
-
+    const token = await authorizationService.getRefreshToken(refreshToken)
     return { token }
   } catch (err) {
-    console.error(' !! Unauthorized refresh token attempt:', err)
-    return reply.unauthorized(err)
+    const error = new CustomError({
+      title: err.title || '!! Unauthorized refresh token attempt',
+      detail: err.detail || 'Refresh token attemp is not authorized',
+      status: err.status || 404,
+      instance: req.url,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
@@ -113,71 +66,52 @@ export async function requestResetPassword (req, reply) {
   const { origin } = req.headers
 
   const { email } = req.body
-  if (!email) return reply.badRequest('Email is required.')
+  if (!email) {
+    const error = new CustomError({
+      title: '!! Email is required',
+      detail: 'Email is required',
+      status: 400,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
+  }
 
   try {
-    const user = await Users.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email roles').lean()
-    if (!user) {
-      // Return OK if no user to avoid giving extra unnecessary info.
-      return { msg: 'OK' }
-    }
-
-    const payload = {
-      sub: user._id,
-    }
-
-    const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: '6 hours' })
-
-    const userMeta = await UsersMetadata.findOneAndUpdate(
-      { _id: user._id },
-      { $set: { verificationToken: token } },
-      { new: true }
-    )
-
-    // Only send email if userMeta was found.
-    if (userMeta) {
-      await sendRequestResetPasswordEmail(user, token, origin)
-    }
-
-    return { msg: 'OK' }
+    await authorizationService.requestResetPassword(email, origin)
   } catch (err) {
-    console.error(` !! Could not request password for: ${email}.`, err)
-    return reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || `!! Could not request password for: ${email}.`,
+      detail: err.detail || 'Exception error',
+      status: 500,
+      instance: req.url,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
 // --------------------
 export async function resetPassword (req, reply) {
   const { email, password, token } = req.body
-  if (!email || !password || !token) return reply.badRequest('Missing information.')
+  if (!email || !password || !token) {
+    const error = new CustomError({
+      title: '!! Missing information',
+      detail: 'Missing information',
+      status: 400,
+    })
+    throw error
+  }
 
   try {
-    const user = await Users.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
-    if (!user) return reply.notFound('User not found.')
-
-    const userMeta = await UsersMetadata.findOne({ _id: user._id }).select('+verificationToken')
-
-    const verificationToken = userMeta.verificationToken
-
-    if (token !== verificationToken?.split('.')[1]) {
-      return reply.unauthorized('Wrong token')
-    }
-
-    // This will throw an error if token is not correct.
-    jwt.verify(verificationToken, process.env.API_SECRET)
-
-    userMeta.password = await argon2.hash(password, { type: argon2.argon2id })
-    userMeta.verificationToken = '-'
-    await userMeta.save()
-
-    return reply.send({ msg: 'Password updated.' })
+    await authorizationService.resetPassword({ email, password, token })
   } catch (err) {
-    console.error(`  ! Could not reset password for ${email} - ${err.name} / ${err.message}.`)
-    switch (err.name) {
-      case 'TokenExpiredError':
-        return reply.conflict('Token has expired.') // code: 409
-      default:
-        return reply.internalServerError('Could not reset password.')
-    }
+    const error = new CustomError({
+      title: err.title || '!! Could not reset password',
+      detail: err.detail || 'Reset password Exception',
+      status: err.status || 500,
+      instance: req.url
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }

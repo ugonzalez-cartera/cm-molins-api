@@ -32,7 +32,7 @@ async function createUser (req, reply) {
     if (isExistingUser) {
       const error = new CustomError({
         title: '!! User already exists',
-        detail: 'An user with this email already exists',
+        detail: 'A user with this email already exists',
         status: 409,
         instance: req.url,
       })
@@ -190,7 +190,7 @@ async function updateUser (req, reply) {
       if (isExistingUser) {
         const error = new CustomError({
           title: '!! User already exists',
-          detail: 'An user with this email already exists',
+          detail: 'A user with this email already exists',
           status: 409,
         })
         error.print()

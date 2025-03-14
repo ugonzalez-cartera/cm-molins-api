@@ -7,7 +7,6 @@ import { changeLogPlugin } from '../changeLogPlugin.js'
 import { customAlphabet } from 'nanoid'
 const newId = customAlphabet(config.nanoid.alphabet, config.nanoid.length)
 
-
 const UserSchema = new Schema({
   _id: { type: String, default: () => `usr_${newId()}` },
   givenName: { type: String, required: true },
@@ -27,8 +26,8 @@ const UserSchema = new Schema({
   id: false, // No additional id as virtual getter.
   toJSON: { versionKey: false, virtuals: true },
   toObject: { versionKey: false },
-  })
+})
 
-  UserSchema.plugin(changeLogPlugin)
+UserSchema.plugin(changeLogPlugin)
 
 export default model('User', UserSchema)

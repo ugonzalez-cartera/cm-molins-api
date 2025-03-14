@@ -4,7 +4,9 @@ import jwt from 'jsonwebtoken'
 
 import { arraysOverlap } from '../services/utils.service.js'
 
-const DEFAULT_REASON = 'Access not authorized.'
+import { CustomError } from '../utils.js'
+
+const DEFAULT_REASON = 'Access not authorized'
 
 // --------------------
 export async function verifyToken (req, reply) {
@@ -19,7 +21,14 @@ export async function verifyToken (req, reply) {
     const decodedToken = jwt.verify(jwtToken, process.env.API_SECRET)
 
     // Refresh tokens don't have roles -- this prevents using RT's for accessing the API.
-    if (!decodedToken) return reply.unauthorized()
+    if (!decodedToken) {
+      const error = new CustomError({
+        title: 'Invalid token',
+        detail: 'Token does not contain user roles',
+        status: 401,
+      })
+      throw error
+    }
     console.info(' --> Access token for', decodedToken.sub, decodedToken.roles)
 
     req.user = {
@@ -27,25 +36,36 @@ export async function verifyToken (req, reply) {
       roles: decodedToken.roles,
     }
   } catch (err) {
-    return reply.unauthorized()
+    const error = new CustomError({
+      title: err.title || 'Invalid token',
+      detail: err.detail || err.message,
+      status: err.status || 401,
+    })
+    error.print()
+    reply.status(error.status).send(error.toJSON())
   }
 }
-
 
 // --------------------
 export function authorize (req, reply, done) {
   const { roles: authorizedRoles = [], reason } = req.routeOptions.config?.authorize || {}
   const userRoles = req.user?.roles || []
 
-  console.info(' --> Authorizing', req.user.id, 'for', authorizedRoles)
+  console.info(' --> Authorizing', req.user?.id, 'for', authorizedRoles)
 
   // If authorizedRoles only contains '*', always allow the request.
   if (authorizedRoles.length === 1 && authorizedRoles[0] === '*') return
 
   if (!arraysOverlap(userRoles, authorizedRoles)) {
     req.log.warn(reason || DEFAULT_REASON)
-    reply.forbidden()
-    return reply
+
+    const error = new CustomError({
+      title: 'Access not authorized',
+      detail: reason || DEFAULT_REASON,
+      status: 403,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 
   done()
