@@ -23,11 +23,13 @@ export async function verifyToken (req, reply) {
     // Refresh tokens don't have roles -- this prevents using RT's for accessing the API.
     if (!decodedToken) {
       const error = new CustomError({
-        title: 'Invalid token',
+        title: '!! Invalid token',
         detail: 'Token does not contain user roles',
         status: 401,
+        instance: req.url,
       })
-      throw error
+      error.print()
+      return reply.status(error.status).send(error.toJSON())
     }
     console.info(' --> Access token for', decodedToken.sub, decodedToken.roles)
 
@@ -37,9 +39,10 @@ export async function verifyToken (req, reply) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Invalid token',
+      title: err.title || 'Verify token exception',
       detail: err.detail || err.message,
       status: err.status || 401,
+      instance: req.url,
     })
     error.print()
     reply.status(error.status).send(error.toJSON())
