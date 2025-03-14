@@ -1,14 +1,13 @@
 {
   "name": "cartera-cm-api",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "carteracm-api",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "test": "npm run test",
     "start": "node index.js",
-    "dev": "node --env-file=.env --watch index.js | pino-colada",
-    "deploy": "gh workflow run .github/workflows/deploy.yaml"
+    "dev": "node --env-file=.env --watch index.js | pino-colada"
   },
   "author": "Unai González Escalante",
   "license": "ISC",

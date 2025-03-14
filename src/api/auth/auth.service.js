@@ -182,7 +182,13 @@ async function requestResetPassword (email, origin) {
 
     return { msg: 'OK' }
   } catch (err) {
+    const error = new CustomError({
+      title: err.title || 'Request password exception',
+      detail: err.detail || 'Request password exception',
+      status: err.status || 500,
+    })
 
+    throw error
   }
 }
 
@@ -244,4 +250,5 @@ export default {
   getAuthToken,
   getRefreshToken,
   resetPassword,
+  requestResetPassword,
 }
