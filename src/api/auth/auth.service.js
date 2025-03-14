@@ -143,7 +143,7 @@ async function getRefreshToken (refreshToken) {
 
     console.info(' --> Refresh token for:', user._id, user.roles)
 
-    return { token }
+    return token
   } catch (err) {
     const error = new CustomError({
       title: err.title || '!! Unauthorized refresh token attempt',
