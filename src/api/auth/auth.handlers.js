@@ -99,7 +99,8 @@ export async function resetPassword (req, reply) {
       detail: 'Missing information',
       status: 400,
     })
-    throw error
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 
   try {
