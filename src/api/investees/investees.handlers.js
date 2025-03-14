@@ -31,7 +31,6 @@ export async function getInvestees (req, reply) {
       ]
     }
 
-
     const [docs, docCount] = await Promise.all([
       Investees.find(filter).skip(skip).limit(limit).sort(sort).lean(),
       Investees.countDocuments(filter),
@@ -54,7 +53,7 @@ export async function fetchInvesteeById (req, reply) {
 
     return investee
   } catch (err) {
-    console.error(' !! Could not fetch investee', investeeId, err)
+    console.error(' !! Could not fetch investee', err)
     reply.internalServerError(err)
   }
 }
@@ -129,7 +128,6 @@ export async function updateInvesteeImage (req, reply) {
     }
 
     await investee.save({ updatedBy: userId })
-
 
     return investee
   } catch (err) {

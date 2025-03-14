@@ -2,8 +2,6 @@
 
 import mongoose from 'mongoose'
 
-import {  uploadFile, deleteFile } from '../../../services/utils.service.js'
-
 import { CustomError } from '../../../utils.js'
 
 import councilsService from './councils.service.js'
