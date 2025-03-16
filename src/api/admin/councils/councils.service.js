@@ -143,7 +143,7 @@ async function createCouncilWithFiles (parts) {
     return newCouncil
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `createCouncilWithFiles exception, ${err}`,
+      title: err.title || `createCouncilWithFiles exception, ${err.message}`,
       detail: err.detail || `createCouncilWithFiles exception, ${err}`,
       status: err.status || 500,
       code: err.code,
@@ -184,7 +184,7 @@ async function createCouncilRegular ({ date, agenda }) {
     return newCouncil
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `createCouncilRegular exception, ${err}`,
+      title: err.title || `createCouncilRegular exception, ${err.message}`,
       detail: err.detail || `createCouncilRegular exception, ${err}`,
       status: err.status || 500,
     })
@@ -218,7 +218,7 @@ async function sendCouncilCallEmail (council, origin) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `sendCouncilEmail exception, ${err}`,
+      title: err.title || `sendCouncilEmail exception, ${err.message}`,
       detail: err.detail || `sendCouncilEmail exception, ${err}`,
       status: err.status || 500,
     })
@@ -246,7 +246,7 @@ async function deleteCouncilDoc (councilId, docId, userId) {
     deleteFile(docId)
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `deleteCouncilDoc exception, ${err}`,
+      title: err.title || `deleteCouncilDoc exception, ${err.message}`,
       detail: err.detail || `deleteCouncilDoc exception, ${err}`,
       status: err.status || 500,
     })
@@ -293,7 +293,7 @@ async function createCouncilDocs (councilId, parts, userId) {
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `createCouncilDocs exception, ${err}`,
+      title: err.title || `createCouncilDocs exception, ${err.message}`,
       detail: err.detail || `createCouncilDocs exception, ${err}`,
       status: err.status || 500,
     })
@@ -320,7 +320,7 @@ async function createCouncilCall ({  councilId, callData, userId, origin }) {
     sendCouncilCallEmail(council, origin)
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `createCouncilCall exception, ${err}`,
+      title: err.title || `createCouncilCall exception, ${err.message}`,
       detail: err.detail || `createCouncilCall exception, ${err}`,
       status: err.status || 500,
     })
@@ -351,7 +351,7 @@ async function deleteCouncilFileResource (councilId, resource) {
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `deleteCouncilFileResource exception, ${err}`,
+      title: err.title || `deleteCouncilFileResource exception, ${err.message}`,
       detail: err.detail || `deleteCouncilFileResource exception, ${err}`,
       status: err.status || 500,
     })
@@ -398,7 +398,7 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `updateCouncilFileResource exception, ${err}`,
+      title: err.title || `updateCouncilFileResource exception, ${err.message}`,
       detail: err.detail || `updateCouncilFileResource exception, ${err}`,
       status: err.status || 500,
     })
@@ -440,7 +440,7 @@ async function updateCouncil (councilId, updatedCouncil, userId) {
     return council
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `UpdateCouncil exception, ${err}`,
+      title: err.title || `UpdateCouncil exception, ${err.message}`,
       detail: err.detail || `UpdateCouncil exception, ${err}`,
       status: err.status || 500,
     })
@@ -481,7 +481,7 @@ async function deleteCouncil (councilId) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `deleteCouncil exception, ${err}`,
+      title: err.title || `deleteCouncil exception, ${err.message}`,
       detail: err.detail || `deleteCouncil exception, ${err}`,
       status: err.status || 500,
     })
@@ -499,7 +499,7 @@ async function deleteCouncilYear (year) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `deleteCouncilYear exception, ${err}`,
+      title: err.title || `deleteCouncilYear exception, ${err.message}`,
       detail: err.detail || `deleteCouncilYear exception, ${err}`,
       status: err.status || 500,
     })

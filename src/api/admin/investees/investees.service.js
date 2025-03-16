@@ -63,7 +63,7 @@ async function getInvesteeById (investeeId) {
     return investee
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `getInvesteeById exception, ${err}`,
+      title: err.title || `getInvesteeById exception, ${err.message}`,
       detail: err.detail || `getInvesteeById exception, ${err}`,
       status: err.status || 500,
     })
@@ -107,7 +107,7 @@ async function createInvestee (investeeData, investeeFile, userId) {
     return investee
   } catch (err) {
     const error = new CustomError({
-      title: err.detail || `createInvestee exception, ${err}`,
+      title: err.detail || `createInvestee exception, ${err.message}`,
       detail: error.detail || `createInvestee exception, ${err}`,
       status: err.status || 500,
     })
@@ -146,7 +146,7 @@ async function updateInvesteeImage (investeeId, userId, file) {
     await investee.save({ updatedBy: userId })
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `updateInvesteeImage exception, ${err}`,
+      title: err.title || `updateInvesteeImage exception, ${err.message}`,
       detail: err.detail || `updateInvesteeImage exception, ${err}`,
       status: err.status || 500,
     })
@@ -183,7 +183,7 @@ async function updateInvestee (
     await investee.save({ updatedBy: userId })
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `updateInvestee exception, ${err}`,
+      title: err.title || `updateInvestee exception, ${err.message}`,
       detail: err.detail || `updateInvestee exception, ${err}`,
       status: err.status || 500,
     })
@@ -201,7 +201,7 @@ async function deleteInvestee (investeeId) {
     await deleteFile(result[0].publicId)
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `deleteInvestee exception, ${err}`,
+      title: err.title || `deleteInvestee exception, ${err.message}`,
       detail: err.detail || `deleteInvestee exception, ${err}`,
       status: err.status || 500,
     })
