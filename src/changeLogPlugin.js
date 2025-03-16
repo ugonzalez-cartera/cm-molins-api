@@ -69,7 +69,7 @@ class ChangeLogManager {
     const keys1 = Object.keys(obj1)
     const keys2 = Object.keys(obj2)
 
-    if (keys1.length !== keys2.length) return false;
+    if (keys1.length !== keys2.length) return false
 
     for (const key of keys1) {
       if (!keys2.includes(key) || !this.#isDeepEqual(obj1[key], obj2[key])) {
@@ -141,12 +141,11 @@ export function changeLogPlugin (schema, options = defaultOptions) {
     next()
   })
 
-  schema.post(documentFunctions, async function (doc) {
+  schema.post(documentFunctions, async function () {
     const { changeLogData } = this.$locals
 
     if (!changeLogData) return
-
-    const { collectionName, originalObj, updatedBy } = changeLogData
+    const { originalObj, updatedBy } = changeLogData
 
     try {
       const updatedObj = await this.constructor.findById(this._id).lean()
@@ -157,12 +156,11 @@ export function changeLogPlugin (schema, options = defaultOptions) {
     }
   })
 
-  schema.post(queryFunctions, async function (doc) {
+  schema.post(queryFunctions, async function () {
     const { changeLogData } = this.$locals
 
     if (!changeLogData) return
-
-    const { collectionName, originalObj, updatedBy } = changeLogData
+    const { originalObj, updatedBy } = changeLogData
 
     try {
       const updatedObj = await this.model.findOne(this.getQuery()).lean()

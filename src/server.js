@@ -12,7 +12,6 @@ export async function start () {
     const { fastify: fastifyApp } = await import('./app.js')
     const host = ("RENDER" in process.env) ? `0.0.0.0` : 'localhost'
 
-
     // Then start listening on the specific port.
     await fastifyApp.listen({ host, port: process.env.PORT || 80 })
     if (process.env.NODE_ENV === 'development') {

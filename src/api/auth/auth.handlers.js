@@ -22,14 +22,8 @@ export async function getToken (req, reply) {
     const { token, refreshToken } = await authorizationService.getAuthToken({ email, password })
     return { token, refreshToken }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || ` !! Unauthorized login attempt for: ${email}.`,
-      detail: err.detail || 'Exception error',
-      status: err.status || 401,
-      instance: req.url,
-    })
-    error.print()
-    return reply.status(error.status).send(error.toJSON())
+    err.print()
+    return reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -50,14 +44,8 @@ export async function refreshToken (req, reply) {
     const token = await authorizationService.getRefreshToken(refreshToken)
     return { token }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Unauthorized refresh token attempt',
-      detail: err.detail || 'Refresh token attemp is not authorized',
-      status: err.status || 404,
-      instance: req.url,
-    })
-    error.print()
-    return reply.status(error.status).send(error.toJSON())
+    err.print()
+    return reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -79,14 +67,8 @@ export async function requestResetPassword (req, reply) {
   try {
     await authorizationService.requestResetPassword(email, origin)
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || `!! Could not request password for: ${email}.`,
-      detail: err.detail || 'Exception error',
-      status: 500,
-      instance: req.url,
-    })
-    error.print()
-    return reply.status(error.status).send(error.toJSON())
+    err.print()
+    return reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -106,13 +88,7 @@ export async function resetPassword (req, reply) {
   try {
     await authorizationService.resetPassword({ email, password, token })
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not reset password',
-      detail: err.detail || 'Reset password Exception',
-      status: err.status || 500,
-      instance: req.url
-    })
-    error.print()
-    return reply.status(error.status).send(error.toJSON())
+    err.print()
+    return reply.status(err.status).send(err.toJSON())
   }
 }

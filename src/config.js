@@ -1,14 +1,11 @@
 const config = {
-  // Password
-  // Minimum eight characters, at least one uppercase letter, one lowercase letter and one number.
-  strongPassword: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/,
-  //Tokens
+  // Tokens
   tokens: {
     accessTokenExpiration: '45 minutes',
     refreshTokenExpiration: '30 days',
     newUserTokenExpiration: '24 hours',
   },
-  // API prefix depending on environment
+  // API prefix depending on environment.
   apiPrefix: {
     development: '/api-v1',
     staging: '/v1',
@@ -28,13 +25,12 @@ const config = {
   },
   roleList: ['owner', 'admin', 'counselor'], // Ordered by hierarchy.
   roleGroups: {
-    guest: { roles: ['guest'] },
-    authenticated: { roles: ['owner', 'admin', 'counselor'], reason: 'allowAuthenticatedOnly -- Access not authorized' },
-    owner: { roles: ['owner'], reason: 'allowOwnerOnly -- Access not authorized' },
+    owner: { roles: ['owner'], reason: 'allowOwnersOnly -- Access not authorized' },
     admin: { roles: ['owner', 'admin'], reason: 'allowAdminsOnly -- Access not authorized' },
     counselor: { roles: ['counselor'], reason: 'allowCounselorsOnly -- Access not authorized' },
+    guest: { roles: ['guest'] },
   },
-  //Mailing
+  // Mailing
   brevo: {
     endpoint: 'https://api.brevo.com/v3/smtp/email',
     template: {
@@ -44,7 +40,7 @@ const config = {
   // Password
   // Minimum eight characters, at least one uppercase letter, one lowercase letter and one number:
   strongPassword: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d\w\W]{8,}$/,
-  // Change logs
+  // Changelogs
   changeLogs: {
     prefixes: {
       default: 'SYSTEM',

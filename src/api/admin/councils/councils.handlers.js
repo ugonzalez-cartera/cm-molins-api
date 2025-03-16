@@ -2,8 +2,6 @@
 
 import mongoose from 'mongoose'
 
-import { CustomError } from '../../../utils.js'
-
 import councilsService from './councils.service.js'
 
 import dayjs from 'dayjs'
@@ -30,15 +28,9 @@ async function createCouncil (req, reply) {
 
     return newCouncil
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not create council',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-      code: err.code
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -50,14 +42,9 @@ async function deleteCouncilYear (req, reply) {
     await councilsService.deleteCouncilYear(Number(councilYear))
     return { message: 'OK' }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not delete council year',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -69,14 +56,9 @@ async function deleteCouncil (req, reply) {
     await councilsService.deleteCouncil(councilId)
     return { message: 'OK' }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not delete council',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -94,14 +76,9 @@ async function updateCouncil (req, reply) {
     const council = await councilsService.updateCouncil(councilId, updatedCouncil, userId)
     return council
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not update council',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -114,14 +91,9 @@ async function updateCouncilFileResource (req, reply) {
     const file = await req?.file()
     await councilsService.updateCouncilFileResource({ councilId, resource, file, userId })
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not update council file resource',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -133,14 +105,9 @@ async function deleteCouncilFileResource (req, reply) {
     await councilsService.deleteCouncilFileResource(councilId, resource)
     return { message: 'OK' }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title ||'!! Could not delete council file resource',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -156,14 +123,9 @@ async function deleteCouncilDoc (req, reply) {
 
     return { message: 'OK' }
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not delete council doc',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-      code: err.code,
-    })
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -176,15 +138,9 @@ async function createCouncilDocs (req, reply) {
     const parts = req.files()
     await councilsService.createCouncilDocs(councilId, parts, userId)
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not create council docs',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-      code: err.code,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -194,14 +150,9 @@ async function getAvailableCallCouncils (req, reply) {
     const councils = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
     return councils
   } catch (err) {
-    const error = new CustomError({
-      title: '!! Could not get available call councils.',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 
@@ -216,14 +167,9 @@ async function createCouncilCall (req, reply) {
     const council = await councilsService.createCouncilCall({ councilId, callData, userId, origin })
     return council
   } catch (err) {
-    const error = new CustomError({
-      title: err.title || '!! Could not create call',
-      detail: err.detail || err.message,
-      status: err.status || 500,
-      instance: req.url,
-    })
-    error.print()
-    reply.status(error.status).send(error.toJSON())
+    err.instance = req.url
+    err.print()
+    reply.status(err.status).send(err.toJSON())
   }
 }
 

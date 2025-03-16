@@ -17,7 +17,7 @@ const ChangeLogs = mongoose.model('ChangeLog')
 const Users = mongoose.model('User')
 
 // --------------------
-function validateCouncilPart (mimetype, hasReachedMaxFiles) {
+function _validateCouncilPart (mimetype, hasReachedMaxFiles) {
   if (mimetype !== 'application/pdf') {
     const error = new CustomError({
       title: 'File type not allowed',
@@ -40,7 +40,7 @@ function validateCouncilPart (mimetype, hasReachedMaxFiles) {
 }
 
 // --------------------
-function getDirName (fieldname) {
+function _getDirName (fieldname) {
   const dirs = new Map([
     ['councilAdditionalDocs', 'additional-docs'],
     ['councilReport', 'report'],
@@ -51,11 +51,11 @@ function getDirName (fieldname) {
 }
 
 // --------------------
-function getFolderName (month, year, dir) {
+function _getFolderName (month, year, dir) {
   return `${currentEnv}-carteracm/councils/${month}-${year}/${dir}`
 }
 
-async function validateCouncilExists (year, month) {
+async function _validateCouncilExists (year, month) {
   const isExistingCouncil = await Councils.findOne({ year, month })
   if (isExistingCouncil) {
     const error = new CustomError({
@@ -79,7 +79,7 @@ async function createCouncilWithFiles (parts) {
     for await (const part of parts) {
       if (part.file && part.fieldname === 'councilAdditionalDocs') {
         filesToUpload +=1
-        validateCouncilPart(part.mimetype, filesToUpload > 3)
+        _validateCouncilPart(part.mimetype, filesToUpload > 3)
       }
 
       const councilData = part.fields?.councilData?.value ? JSON.parse(part.fields?.councilData?.value) : {}
@@ -98,11 +98,11 @@ async function createCouncilWithFiles (parts) {
       year = dayjs(date).year()
       newDate = dayjs(date).startOf('day').utc(true).toISOString()
 
-      await validateCouncilExists(year, month)
+      await _validateCouncilExists(year, month)
 
       const buffer = await part.toBuffer()
-      const dir = getDirName(part.fieldname)
-      const folder = getFolderName(month, year, dir)
+      const dir = _getDirName(part.fieldname)
+      const folder = _getFolderName(month, year, dir)
       const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
       if (part.fieldname === 'councilAdditionalDocs') {
@@ -143,8 +143,8 @@ async function createCouncilWithFiles (parts) {
     return newCouncil
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error uploading files',
-      detail: err.detail,
+      title: err.title || `createCouncilWithFiles exception, ${err}`,
+      detail: err.detail || `createCouncilWithFiles exception, ${err}`,
       status: err.status || 500,
       code: err.code,
     })
@@ -169,7 +169,7 @@ async function createCouncilRegular ({ date, agenda }) {
     const year = dayjs(date).year()
     const newDate = dayjs(date).startOf('day').utc(true).toISOString()
 
-    await validateCouncilExists(year, month)
+    await _validateCouncilExists(year, month)
 
     const newCouncil = new Councils({
       year,
@@ -184,8 +184,8 @@ async function createCouncilRegular ({ date, agenda }) {
     return newCouncil
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error creating council',
-      detail: err.detail,
+      title: err.title || `createCouncilRegular exception, ${err}`,
+      detail: err.detail || `createCouncilRegular exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -218,8 +218,8 @@ async function sendCouncilCallEmail (council, origin) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error sending council call email',
-      detail: err.detail,
+      title: err.title || `sendCouncilEmail exception, ${err}`,
+      detail: err.detail || `sendCouncilEmail exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -246,8 +246,8 @@ async function deleteCouncilDoc (councilId, docId, userId) {
     deleteFile(docId)
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error deleting council doc',
-      detail: err.detail,
+      title: err.title || `deleteCouncilDoc exception, ${err}`,
+      detail: err.detail || `deleteCouncilDoc exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -273,11 +273,11 @@ async function createCouncilDocs (councilId, parts, userId) {
     for await (const part of parts) {
       if (part.file) {
         filesToUpload += 1
-        validateCouncilPart(part.mimetype, filesToUpload > 3)
+        _validateCouncilPart(part.mimetype, filesToUpload > 3)
       }
 
       const buffer = await part.toBuffer()
-      const folder = getFolderName(council.month, council.year, 'additional-docs')
+      const folder = _getFolderName(council.month, council.year, 'additional-docs')
       const uploadedFile = await uploadFile(buffer, folder, part.filename)
 
       additionalDocs.push({
@@ -293,8 +293,8 @@ async function createCouncilDocs (councilId, parts, userId) {
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error creating council docs',
-      detail: err.detail,
+      title: err.title || `createCouncilDocs exception, ${err}`,
+      detail: err.detail || `createCouncilDocs exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -320,8 +320,8 @@ async function createCouncilCall ({  councilId, callData, userId, origin }) {
     sendCouncilCallEmail(council, origin)
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error creating council call',
-      detail: err.detail,
+      title: err.title || `createCouncilCall exception, ${err}`,
+      detail: err.detail || `createCouncilCall exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -351,8 +351,8 @@ async function deleteCouncilFileResource (councilId, resource) {
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error deleting council file resource',
-      detail: err.detail,
+      title: err.title || `deleteCouncilFileResource exception, ${err}`,
+      detail: err.detail || `deleteCouncilFileResource exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -376,7 +376,7 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
     if (file) {
       const councilFile = file.fields.councilFile
       const buffer = await councilFile.toBuffer()
-      const folder = getFolderName(council.month, council.year, resource)
+      const folder = _getFolderName(council.month, council.year, resource)
       uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
       if (council[resource]?.publicId) {
         deleteFile(council[resource].publicId)
@@ -398,8 +398,8 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
     )
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error updating council file resource',
-      detail: err.detail,
+      title: err.title || `updateCouncilFileResource exception, ${err}`,
+      detail: err.detail || `updateCouncilFileResource exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -440,8 +440,8 @@ async function updateCouncil (councilId, updatedCouncil, userId) {
     return council
   } catch (err) {
     const error = new CustomError({
-      title: err.title || '!! Could not update council',
-      detail: err.detail || err.message,
+      title: err.title || `UpdateCouncil exception, ${err}`,
+      detail: err.detail || `UpdateCouncil exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -472,8 +472,8 @@ async function deleteCouncil (councilId) {
         await deleteFolder(`${currentEnv}-carteracm/councils/${council.month}-${council.year}`)
       } catch (innerErr) {
         const error = new CustomError({
-          title: innerErr.title || 'Error deleting folder or resource',
-          detail: innerErr.detail,
+          title: `delete files exception, ${innerErr}`,
+          detail: `delete files exception, ${innerErr}`,
           status: innerErr.status,
         })
         throw error
@@ -481,8 +481,8 @@ async function deleteCouncil (councilId) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Error deleting council',
-      detail: err.detail,
+      title: err.title || `deleteCouncil exception, ${err}`,
+      detail: err.detail || `deleteCouncil exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -499,8 +499,8 @@ async function deleteCouncilYear (year) {
     }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || '!! Could not delete council year',
-      detail: err.detail || err.message,
+      title: err.title || `deleteCouncilYear exception, ${err}`,
+      detail: err.detail || `deleteCouncilYear exception, ${err}`,
       status: err.status || 500,
     })
     throw error
@@ -508,9 +508,9 @@ async function deleteCouncilYear (year) {
 }
 
 export default {
-  validateCouncilPart,
-  getDirName,
-  getFolderName,
+  _validateCouncilPart,
+  _getDirName,
+  _getFolderName,
   createCouncilWithFiles,
   createCouncilRegular,
   sendCouncilCallEmail,

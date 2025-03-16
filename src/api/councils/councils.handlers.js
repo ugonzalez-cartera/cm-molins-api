@@ -4,6 +4,8 @@ import mongoose from 'mongoose'
 
 import dayjs from 'dayjs'
 
+import { CustomError } from '../../utils.js'
+
 const Councils = mongoose.model('Council')
 
 // --------------------
@@ -30,8 +32,14 @@ export async function getCouncils (req, reply) {
       }
     }
   } catch (err) {
-    console.error(' !! Could not get councils.', err)
-    reply.internalServerError(err)
+    const error = new CustomError({
+      title: err.title || 'getCouncils error exception',
+      detail: err.detail || 'getCouncils error exception',
+      status: err.status || 500,
+      instance: req.url,
+    })
+    error.print()
+    return reply.status(error.status).send(error.toJSON())
   }
 }
 
