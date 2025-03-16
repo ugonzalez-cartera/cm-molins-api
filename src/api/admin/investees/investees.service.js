@@ -180,9 +180,8 @@ async function updateInvestee (
     investee.description = description
     investee.updatedBy = userId
 
-    await investeee.save({ updatedBy: userId })
+    await investee.save({ updatedBy: userId })
   } catch (err) {
-    console.info(err.message, 'MESSAGE', Object.keys(err))
     const error = new CustomError({
       title: err.title || `updateInvestee exception, ${err}`,
       detail: err.detail || `updateInvestee exception, ${err}`,
