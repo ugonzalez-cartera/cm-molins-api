@@ -31,7 +31,6 @@ export async function sendRequestResetPasswordEmail (userData, token, baseUrl) {
   }
 }
 
-
 export async function sendCreateUserEmail ({ userData, emailData, token, baseUrl }) {
   // Only send the central part of the token (the payload).
   const tokenPayload = token.split('.')[1]

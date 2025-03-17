@@ -200,7 +200,7 @@ async function sendCouncilCallEmail (council, origin) {
     const emailData = {
       templateId: 3,
       description: council.call.description,
-      body: council.agenda.description,
+      body: council.agenda.description.replace(/<br>/g, '\n'),
       title: council.call.title,
       subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
     }
@@ -410,7 +410,7 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
 async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
   const year = dayjs(date).year()
   const month = dayjs(date).month()
-  const updatedCouncil = { agenda, minutes, date, year, month }
+  const updatedCouncil = { agenda: { description: agenda.description.replace(/(?:\r\n|\r|\n)/g, '<br>') } , minutes, date, year, month }
 
   try {
     const existingCouncil = await Councils.findOne({ year, month }).lean()

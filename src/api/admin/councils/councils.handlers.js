@@ -62,6 +62,7 @@ async function updateCouncil (req, reply) {
     const council = await councilsService.updateCouncil(councilId, userId, { agenda, minutes, date })
     return council
   } catch (err) {
+    console.info(err, 'err')
     err.instance = req.url
     err.print()
     reply.status(err.status).send(err.toJSON())
