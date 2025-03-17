@@ -13,7 +13,7 @@ const Users = mongoose.model('User')
 const UsersMetadata = mongoose.model('UserMetadata')
 
 // --------------------
-export async function getAuthToken ({ email, password }) {
+async function getAuthToken ({ email, password }) {
   if (!email || !password) {
     const error = new CustomError({
       title: '!! Invalid credentials',
