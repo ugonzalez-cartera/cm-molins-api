@@ -39,9 +39,9 @@ async function getInvestees ({ page, type, limit, sort, term }) {
     return { docs, docCount }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || '!! Could not get investees',
-      detail: err.detail || 'No investees were found with specified params',
-      status: err.status || 404,
+      title: `getInvestees exception, ${err.message}`,
+      detail: `getInvestees exception, ${err}`,
+      status: 404,
     })
     throw error
   }
