@@ -2,17 +2,6 @@
 
 import investeesService from './investees.service.js'
 
-import mongoose from 'mongoose'
-
-import { CustomError } from '../../../utils.js'
-
-import { uploadFile, deleteFile } from '../../../services/utils.service.js'
-
-const Investees = mongoose.model('Investee')
-const ChangeLogs = mongoose.model('ChangeLog')
-
-const currentEnv = process.env.NODE_ENV
-
 // --------------------
 async function getInvestees (req, reply) {
   try {
@@ -48,16 +37,6 @@ async function createInvestee (req, reply) {
   try {
     const file = await req.file()
     const { investeeData, investeeFile } = file.fields
-    if (!investeeData || !investeeFile) {
-      const error = new CustomError({
-        title: '!! Missing investee data or file',
-        detail: 'Required elements missing',
-        status: 400,
-      })
-      error.print()
-      return reply.status(error.status).send(error.toJSON())
-    }
-
     const investee = await investeesService.createInvestee(investeeData, investeeFile, userId)
     return investee
 

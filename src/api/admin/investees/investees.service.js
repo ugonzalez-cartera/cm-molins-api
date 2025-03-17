@@ -73,15 +73,24 @@ async function getInvesteeById (investeeId) {
 
 // --------------------
 async function createInvestee (investeeData, investeeFile, userId) {
-  try {
+  if (!investeeData || !investeeFile) {
+    const error = new CustomError({
+      title: '!! Missing investee data or file',
+      detail: 'Required elements missing',
+      status: 400,
+    })
+    throw error
+  }
 
+  try {
     const { name, type, investedAt, disinvestedAt, websiteUrl, headquarters, description = {} } = JSON.parse(investeeData?.value || '')
 
     const isExistingInvestee = await Investees.exists({ name }).lean()
     if (isExistingInvestee) {
       const error = new CustomError({
         title: '!! Investee already exists',
-        detail: 'Cannot create an investee that already exists'
+        detail: 'Cannot create an investee that already exists',
+        status: 409,
       })
       throw error
     }
@@ -108,7 +117,7 @@ async function createInvestee (investeeData, investeeFile, userId) {
   } catch (err) {
     const error = new CustomError({
       title: err.detail || `createInvestee exception, ${err.message}`,
-      detail: error.detail || `createInvestee exception, ${err}`,
+      detail: err.detail || `createInvestee exception, ${err}`,
       status: err.status || 500,
     })
     throw error

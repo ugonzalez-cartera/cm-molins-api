@@ -85,17 +85,25 @@ export async function getAuthToken ({ email, password }) {
     return { token, refreshToken }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Authorization error exception',
-      detail: err.detail || 'Authorization error exception',
+      title: err.title || `getAuthToken exception ${err.message}`,
+      detail: err.detail || `getAuthToken exception ${err}`,
       status: err.status || 500,
     })
-
     throw error
   }
 }
 
 // --------------------
 async function getRefreshToken (refreshToken) {
+  if (!refreshToken) {
+    const error = new CustomError({
+      title: '!! Refresh token is required',
+      detail: 'A refresh token is required',
+      status: 400,
+    })
+    throw error
+  }
+
   try {
     // Decode the received refresh token *not* the one passed via Authorization header.
     const { sub } = jwt.verify(refreshToken, process.env.API_SECRET)
@@ -134,7 +142,6 @@ async function getRefreshToken (refreshToken) {
       sub: user._id,
       roles: user.roles,
     }
-
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: config.tokens.accessTokenExpiration })
 
     // Update lastSessionAt info on user.
@@ -146,8 +153,8 @@ async function getRefreshToken (refreshToken) {
     return token
   } catch (err) {
     const error = new CustomError({
-      title: err.title || '!! Unauthorized refresh token attempt',
-      detail: err.detail || 'Refresh token attemp is not authorized',
+      title: err.title || `getRefreshToken exception ${err.message}`,
+      detail: err.detail || `getRefreshToken exception ${err}`,
       status: err.status || 404,
     })
     throw error
@@ -156,6 +163,15 @@ async function getRefreshToken (refreshToken) {
 
 // --------------------
 async function requestResetPassword (email, origin) {
+  if (!email) {
+    const error = new CustomError({
+      title: '!! Email is required',
+      detail: 'Email is required',
+      status: 400,
+    })
+    throw error
+  }
+
   try {
     const user = await Users.findOne({ email, isNotActive: { $ne: true } }).select('_id givenName familyName email roles').lean()
     if (!user) {
@@ -166,7 +182,6 @@ async function requestResetPassword (email, origin) {
     const payload = {
       sub: user._id,
     }
-
     const token = jwt.sign(payload, process.env.API_SECRET, { expiresIn: '6 hours' })
 
     const userMeta = await UsersMetadata.findOneAndUpdate(
@@ -174,7 +189,6 @@ async function requestResetPassword (email, origin) {
       { $set: { verificationToken: token } },
       { new: true }
     )
-
     // Only send email if userMeta was found.
     if (userMeta) {
       await sendRequestResetPasswordEmail(user, token, origin)
@@ -183,8 +197,8 @@ async function requestResetPassword (email, origin) {
     return { msg: 'OK' }
   } catch (err) {
     const error = new CustomError({
-      title: err.title || 'Request password exception',
-      detail: err.detail || 'Request password exception',
+      title: err.title || `requestResetPassword exception ${err.message}`,
+      detail: err.detail || `requestResetPassword exception ${err}`,
       status: err.status || 500,
     })
 
@@ -194,6 +208,15 @@ async function requestResetPassword (email, origin) {
 
 // --------------------
 async function resetPassword ({ email, password, token }) {
+  if (!email || !password || !token) {
+    const error = new CustomError({
+      title: '!! Missing information',
+      detail: 'Missing information',
+      status: 400,
+    })
+    throw error
+  }
+
   try {
     const user = await Users.findOne({ email, isNotActive: { $ne: true }  }).select('_id')
     if (!user) {
@@ -224,7 +247,7 @@ async function resetPassword ({ email, password, token }) {
     userMeta.verificationToken = '-'
     await userMeta.save()
 
-    return { msg: 'Password updated.' }
+    return { msg: 'Password updated' }
   } catch (err) {
     const error = new CustomError({
       title: err.title,
@@ -238,7 +261,8 @@ async function resetPassword ({ email, password, token }) {
       error.status = 409
       break
     default:
-      error.title = '!! Could not reset password'
+      error.title = `resetPassword exception ${err.message}`
+      error.detail = `resetPassword exception ${err}`
       error.status = 500
     }
 

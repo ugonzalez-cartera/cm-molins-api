@@ -1,17 +1,6 @@
 'use strict'
 
-import mongoose from 'mongoose'
-
 import councilsService from './councils.service.js'
-
-import dayjs from 'dayjs'
-import timezone from 'dayjs/plugin/timezone.js'
-import utc from 'dayjs/plugin/utc.js'
-
-dayjs.extend(utc)
-dayjs.extend(timezone)
-
-const Councils = mongoose.model('Council')
 
 // --------------------
 async function createCouncil (req, reply) {
@@ -68,12 +57,9 @@ async function updateCouncil (req, reply) {
   const { councilId } = req.params
 
   const { agenda, minutes, date } = req.body || {}
-  const year = dayjs(date).year()
-  const month = dayjs(date).month()
-  const updatedCouncil = { agenda, minutes, date, year, month }
 
   try {
-    const council = await councilsService.updateCouncil(councilId, updatedCouncil, userId)
+    const council = await councilsService.updateCouncil(councilId, userId, { agenda, minutes, date })
     return council
   } catch (err) {
     err.instance = req.url
@@ -147,7 +133,7 @@ async function createCouncilDocs (req, reply) {
 // --------------------
 async function getAvailableCallCouncils (req, reply) {
   try {
-    const councils = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
+    const councils = await councilsService.getAvailableCallCouncils()
     return councils
   } catch (err) {
     err.instance = req.url

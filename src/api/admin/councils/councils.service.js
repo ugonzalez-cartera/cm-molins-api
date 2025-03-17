@@ -407,8 +407,10 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
 }
 
 // --------------------
-async function updateCouncil (councilId, updatedCouncil, userId) {
-  const { year, month } = updatedCouncil
+async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
+  const year = dayjs(date).year()
+  const month = dayjs(date).month()
+  const updatedCouncil = { agenda, minutes, date, year, month }
 
   try {
     const existingCouncil = await Councils.findOne({ year, month }).lean()
@@ -507,10 +509,22 @@ async function deleteCouncilYear (year) {
   }
 }
 
+// --------------------
+async function getAvailableCallCouncils () {
+  try {
+    const availableCouncilCalls = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
+    return availableCouncilCalls
+  } catch (err) {
+    const error = new CustomError({
+      title: `getAvailableCallCouncils exception, ${err.message}`,
+      detail: `getAvailableCallCouncils exception, ${err}`,
+      status: 500,
+    })
+    throw error
+  }
+}
+
 export default {
-  _validateCouncilPart,
-  _getDirName,
-  _getFolderName,
   createCouncilWithFiles,
   createCouncilRegular,
   sendCouncilCallEmail,
@@ -522,4 +536,5 @@ export default {
   updateCouncil,
   deleteCouncil,
   deleteCouncilYear,
+  getAvailableCallCouncils,
 }
