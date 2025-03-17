@@ -2,9 +2,9 @@
 
 import mongoose from 'mongoose'
 
-import { uploadFile, deleteFile } from '../../../services/utils.service.js'
+import { uploadFile, deleteFile } from '../services/utils.service.js'
 
-import { CustomError } from '../../../utils.js'
+import { CustomError } from '../utils.js'
 
 const Investees = mongoose.model('Investee')
 const ChangeLogs = mongoose.model('ChangeLog')
