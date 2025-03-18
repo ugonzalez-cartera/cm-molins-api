@@ -410,12 +410,18 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
 async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
   const year = dayjs(date).year()
   const month = dayjs(date).month()
-  const updatedCouncil = { agenda: { description: agenda.description.replace(/(?:\r\n|\r|\n)/g, '<br>') } , minutes, date, year, month }
 
   try {
-    const existingCouncil = await Councils.findOne({ year, month }).lean()
-    if (existingCouncil) {
-      if (existingCouncil._id !== councilId) {
+    const council = await Councils.findOne({ year, month })
+    if (!council) {
+      const error = new CustomError({
+        title: 'Council not found',
+        detail: 'Cannot update a council that does not exist',
+        status: 404,
+      })
+      throw error
+    } else {
+      if (council._id !== councilId) {
         const error = new CustomError({
           title: 'Council already exists',
           detail: 'Cannot create a council in an existing month.',
@@ -425,26 +431,20 @@ async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
       }
     }
 
-    const council = await Councils.findOneAndUpdate(
-      { _id: councilId },
-      { $set: updatedCouncil },
-      { new: true, updatedBy: userId }
-    )
-    if (!council) {
-      const error = new CustomError({
-        title: 'Council not found',
-        detail: 'Cannot update a council that does not exist',
-        status: 404,
-      })
-      throw error
-    }
+    council.agenda.description = agenda.description.replace(/(?:\r\n|\r|\n)/g, '<br>')
+    council.minutes = minutes
+    council.date = dayjs(date).startOf('day').utc(true).toISOString()
+    council.year = year
+    council.month = month
+
+    await council.save({ updatedBy: userId })
 
     return council
   } catch (err) {
     const error = new CustomError({
-      title: err.title || `UpdateCouncil exception, ${err.message}`,
-      detail: err.detail || `UpdateCouncil exception, ${err}`,
-      status: err.status || 500,
+      title: err?.title || `UpdateCouncil exception, ${err.message}`,
+      detail: err?.detail || `UpdateCouncil exception, ${err}`,
+      status: err?.status || 500,
     })
     throw error
   }
