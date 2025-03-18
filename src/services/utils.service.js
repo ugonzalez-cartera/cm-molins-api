@@ -43,6 +43,8 @@ export async function sendNotificationEmail (emailData) {
       params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }] },
     }
 
+    if (emailData.attachment) dataToSend.attachment = emailData.attachment
+
     const { data } = await axios.post(config.brevo.endpoint,
       dataToSend,
       {

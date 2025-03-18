@@ -193,40 +193,6 @@ async function createCouncilRegular ({ date, agenda }) {
 }
 
 // --------------------
-async function sendCouncilCallEmail (council, origin) {
-  try {
-    const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
-
-    const emailData = {
-      templateId: 3,
-      description: council.call.description,
-      body: council.agenda.description.replace(/<br>/g, '\n'),
-      title: council.call.title,
-      subject: `Convocatoria Consejo Cartera de inversiones C.M.- ${dayjs(council.date).tz('Europe/Paris').format('DD/MM/YYYY')}`,
-    }
-
-    for (const counselor of counselors) {
-      Object.assign(emailData,  {
-        name: counselor.givenName.toUpperCase(),
-        familyName: counselor.familyName.toUpperCase(),
-        email: counselor.email,
-        locale: counselor.country,
-        ctaLink: origin,
-      })
-
-      sendNotificationEmail(emailData)
-    }
-  } catch (err) {
-    const error = new CustomError({
-      title: err.title || `sendCouncilEmail exception, ${err.message}`,
-      detail: err.detail || `sendCouncilEmail exception, ${err}`,
-      status: err.status || 500,
-    })
-    throw error
-  }
-}
-
-// --------------------
 async function deleteCouncilDoc (councilId, docId, userId) {
   try {
     const council = await Councils.findOneAndUpdate(
@@ -302,7 +268,7 @@ async function createCouncilDocs (councilId, parts, userId) {
 }
 
 // --------------------
-async function createCouncilCall ({  councilId, callData, userId, origin }) {
+async function createCouncilCall ({ councilId, callData, userId, origin, hasAttachment }) {
   try {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
@@ -317,11 +283,48 @@ async function createCouncilCall ({  councilId, callData, userId, origin }) {
       })
       throw error
     }
-    sendCouncilCallEmail(council, origin)
+    sendCouncilCallEmail(council, origin, hasAttachment)
   } catch (err) {
     const error = new CustomError({
       title: err.title || `createCouncilCall exception, ${err.message}`,
       detail: err.detail || `createCouncilCall exception, ${err}`,
+      status: err.status || 500,
+    })
+    throw error
+  }
+}
+
+// --------------------
+async function sendCouncilCallEmail (council, origin, hasAttachment) {
+  try {
+    const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
+
+    const emailData = {
+      templateId: 3,
+      description: council.call.description,
+      body: council.agenda?.description?.replace(/<br>/g, '\n'),
+      subject: council.call.title,
+    }
+    if (hasAttachment) {
+      emailData.attachment = []
+      emailData.attachment.push({ url: council.report.file.secureUrl, name: 'Informe del consejo' + '.pdf' })
+    }
+
+    for (const counselor of counselors) {
+      Object.assign(emailData,  {
+        name: counselor.givenName.toUpperCase(),
+        familyName: counselor.familyName.toUpperCase(),
+        email: counselor.email,
+        locale: counselor.country,
+        ctaLink: origin,
+      })
+
+      sendNotificationEmail(emailData)
+    }
+  } catch (err) {
+    const error = new CustomError({
+      title: err.title || `sendCouncilEmail exception, ${err.message}`,
+      detail: err.detail || `sendCouncilEmail exception, ${err}`,
       status: err.status || 500,
     })
     throw error
