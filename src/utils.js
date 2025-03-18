@@ -18,12 +18,12 @@ export class CustomError extends Error {
     super(options.detail || options.title || 'Unknown error')
 
     this.name = options.name || 'CustomError'
-    this.title = options.title;
-    this.detail = options.detail;
-    this.status = options.status;
-    this.type = options.type;
-    this.instance = options.instance;
-    this.code = options.code;
+    this.title = options.title
+    this.detail = options.detail
+    this.status = options.status
+    this.type = options.type
+    this.instance = options.instance
+    this.code = options.code
   }
 
   toJSON() {
