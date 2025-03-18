@@ -63,7 +63,7 @@ async function updateCouncil (req, reply) {
     return council
   } catch (err) {
     err.instance = req.url
-    // err.print()´
+    err.print()
     reply.status(err.status).send(err.toJSON())
   }
 }
