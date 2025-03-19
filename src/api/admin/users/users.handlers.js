@@ -49,11 +49,12 @@ async function getUserById (req, reply) {
 
 // --------------------
 async function updateUser (req, reply) {
+  const { id: requesterId } = req.user
   const { userId } = req.params
   const { givenName, familyName, email, isNotActive, roles } = req.body
 
   try {
-    const user = await usersService.updateUser({ userId, givenName, familyName, email, roles, isNotActive })
+    const user = await usersService.updateUser({ requesterId, userId, givenName, familyName, email, roles, isNotActive })
     return user
   } catch (err) {
     err.instance = req.url

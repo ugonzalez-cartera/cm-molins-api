@@ -142,7 +142,7 @@ async function getUserById (userId) {
 }
 
 // --------------------
-async function updateUser ({ userId, givenName, familyName, email, roles, isNotActive }) {
+async function updateUser ({ requesterId, userId, givenName, familyName, email, roles, isNotActive }) {
   try {
     if (roles.length === 0) {
       const error = new CustomError({
@@ -184,7 +184,7 @@ async function updateUser ({ userId, givenName, familyName, email, roles, isNotA
     user.roles = sortedRoles
     user.isNotActive = isNotActive
 
-    await user.save({ updatedBy: userId })
+    await user.save({ updatedBy: requesterId })
 
     return user
   } catch (err) {
