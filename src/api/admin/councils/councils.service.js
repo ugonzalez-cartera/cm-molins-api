@@ -305,7 +305,7 @@ async function sendCouncilCallEmail (council, origin, hasAttachment) {
       body: council.agenda?.description?.replace(/<br>/g, '\n'),
       subject: council.call.title,
     }
-    if (hasAttachment) {
+    if (hasAttachment && council.report?.file?.secureUrl) {
       emailData.attachment = []
       emailData.attachment.push({ url: council.report.file.secureUrl, name: 'Informe del consejo' + '.pdf' })
     }
