@@ -269,7 +269,7 @@ async function createCouncilDocs (councilId, parts, userId) {
 }
 
 // --------------------
-async function createCouncilCall ({ councilId, callData, userId, origin, hasAttachment }) {
+async function createCouncilCall ({ councilId, callData, userId, origin }) {
   try {
     const council = await Councils.findOneAndUpdate(
       { _id: councilId },
@@ -284,7 +284,7 @@ async function createCouncilCall ({ councilId, callData, userId, origin, hasAtta
       })
       throw error
     }
-    sendCouncilCallEmail(council, origin, hasAttachment)
+    sendCouncilCallEmail(council, origin)
   } catch (err) {
     const error = new CustomError({
       title: err.title || `createCouncilCall exception, ${err.message}`,
@@ -296,7 +296,7 @@ async function createCouncilCall ({ councilId, callData, userId, origin, hasAtta
 }
 
 // --------------------
-async function sendCouncilCallEmail (council, origin, hasAttachment) {
+async function sendCouncilCallEmail (council, origin) {
   try {
     const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
 
@@ -305,10 +305,6 @@ async function sendCouncilCallEmail (council, origin, hasAttachment) {
       description: council.call.description,
       body: council.agenda?.description?.replace(/<br>/g, '\n'),
       subject: council.call.title,
-    }
-    if (hasAttachment && council.report?.file?.secureUrl) {
-      emailData.attachment = []
-      emailData.attachment.push({ url: council.report.file.secureUrl, name: 'Informe del consejo' + '.pdf' })
     }
 
     for (const counselor of counselors) {

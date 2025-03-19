@@ -147,10 +147,10 @@ async function createCouncilCall (req, reply) {
   const { origin } = req.headers
   const { id: userId } = req.user
   const { councilId } = req.params
-  const { callData, hasAttachment } = req.body
+  const { callData } = req.body
 
   try {
-    const council = await councilsService.createCouncilCall({ councilId, callData, userId, origin, hasAttachment })
+    const council = await councilsService.createCouncilCall({ councilId, callData, userId, origin })
     return council
   } catch (err) {
     err.instance = req.url
