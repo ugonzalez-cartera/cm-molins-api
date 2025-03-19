@@ -146,7 +146,7 @@ async function createCouncilWithFiles (parts) {
       title: err.title || `createCouncilWithFiles exception, ${err.message}`,
       detail: err.detail || `createCouncilWithFiles exception, ${err}`,
       status: err.status || 500,
-      code: err.code,
+      code: err.code || '',
     })
     throw error
   }
@@ -262,6 +262,7 @@ async function createCouncilDocs (councilId, parts, userId) {
       title: err.title || `createCouncilDocs exception, ${err.message}`,
       detail: err.detail || `createCouncilDocs exception, ${err}`,
       status: err.status || 500,
+      code: err.code || '',
     })
     throw error
   }
@@ -431,11 +432,11 @@ async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
       { _id: councilId },
       {
         $set: {
-          minutes,
           date,
           year,
           month,
           'agenda.description': agenda.description.replace(/(?:\r\n|\r|\n)/g, '<br>'),
+          'minutes.description': minutes.description.replace(/(?:\r\n|\r|\n)/g, '<br>'),
         }
       },
       { new: true, updatedBy: userId }
