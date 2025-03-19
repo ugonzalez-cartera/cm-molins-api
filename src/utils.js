@@ -21,28 +21,37 @@ export class CustomError extends Error {
     this.title = options.title
     this.detail = options.detail
     this.status = options.status
+    this.severity = options.severity || 'error'
     this.type = options.type
     this.instance = options.instance
     this.code = options.code
   }
 
-  toJSON() {
+  toJSON () {
     return {
       name: this.name,
       title: this.title,
       detail: this.detail,
       status: this.status,
+      severity: this.severity,
       type: this.type || 'about:blank',
       instance: this.instance,
       code: this.code,
     }
   }
 
-  print() {
-    console.error(
+  print () {
+    const severity = this.severity === 'error' ? 'ERROR' : 'WARNING'
+    const message =
       `\n =================== \n` +
       `${JSON.stringify(this.toJSON(), null, 2)}` +
       `\n =================== \n`
-    )
+
+    if (severity === 'WARNING') {
+      console.warn(message)
+    } else {
+      console.error(message)
+    }
+
   }
 }

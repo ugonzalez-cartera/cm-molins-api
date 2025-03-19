@@ -18,6 +18,15 @@ export async function verifyToken (req, reply) {
 
     // The authorization header contains 'Bearer <token>' so we need to extract the actual jwtToken from that string.
     const jwtToken = req.headers.authorization?.split(' ')[1]
+    if (!jwtToken) {
+      const error = new CustomError({
+        title: '!! Missing token',
+        detail: 'No token found in the Authorization header',
+        status: 401,
+        instance: req.url,
+      })
+      throw error
+    }
     const decodedToken = jwt.verify(jwtToken, process.env.API_SECRET)
 
     // Refresh tokens don't have roles -- this prevents using RT's for accessing the API.
@@ -28,8 +37,7 @@ export async function verifyToken (req, reply) {
         status: 401,
         instance: req.url,
       })
-      error.print()
-      return reply.status(error.status).send(error.toJSON())
+      throw error
     }
     console.info(' --> Access token for', decodedToken.sub, decodedToken.roles)
 
