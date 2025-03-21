@@ -2,6 +2,7 @@ import mongoose from 'mongoose'
 
 import { CustomError } from '../../../utils.js'
 import { uploadFile, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail } from '../../../services/utils.service.js'
+import { getCouncilCallTemplate } from '../../../services/data/mailing/templates/council-call.js'
 
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone.js'
@@ -301,9 +302,8 @@ async function sendCouncilCallEmail (council, origin) {
     const counselors = await Users.find({ roles: { $in: ['counselor'] }, isNotActive: { $ne: true } }).lean()
 
     const emailData = {
-      templateId: 3,
       description: council.call.description,
-      body: council.agenda?.description?.replace(/<br>/g, '\n'),
+      body: council.agenda?.description,
       subject: council.call.title,
     }
 
@@ -315,7 +315,9 @@ async function sendCouncilCallEmail (council, origin) {
         locale: counselor.country,
         ctaLink: origin,
       })
-
+      const {  description, body, ctaLink } = emailData
+      const htmlContent = getCouncilCallTemplate({ description, body, ctaLink })
+      emailData.htmlContent = htmlContent
       sendNotificationEmail(emailData)
     }
   } catch (err) {
@@ -431,8 +433,8 @@ async function updateCouncil (councilId, userId, { agenda, minutes, date }) {
           date,
           year,
           month,
-          'agenda.description': agenda.description.replace(/(?:\r\n|\r|\n)/g, '<br>'),
-          'minutes.description': minutes.description.replace(/(?:\r\n|\r|\n)/g, '<br>'),
+          'agenda.description': agenda?.description,
+          'minutes.description': minutes?.description,
         }
       },
       { new: true, updatedBy: userId }

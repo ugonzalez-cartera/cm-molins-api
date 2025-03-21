@@ -39,8 +39,13 @@ export async function sendNotificationEmail (emailData) {
       sender: { name: 'Cartera de inversiones C.M', email: 'carteracm@carteracm.com' },
       replyTo: { name: 'Cartera de inversiones C.M', email: 'carteracm@carteracm.com' },
       to: [{ email: emailTo, name: nameTo }],
-      templateId: emailData.templateId || config.brevo.template.notification,
       params: { items: [{ ...params, name: nameTo, familyName: familyNameTo }] },
+    }
+
+    if (emailData.templateId) {
+      dataToSend.templateId = emailData.templateId || config.brevo.template.notification
+    } else {
+      dataToSend.htmlContent = emailData.htmlContent
     }
 
     const { data } = await axios.post(config.brevo.endpoint,
@@ -52,7 +57,6 @@ export async function sendNotificationEmail (emailData) {
           'Content-Type': 'application/json',
         },
       })
-
     return data
   } catch (err) {
     console.error('  !! Error sending notification email')

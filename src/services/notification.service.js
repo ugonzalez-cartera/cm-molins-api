@@ -15,6 +15,7 @@ export async function sendRequestResetPasswordEmail (userData, token, baseUrl) {
     const locale = userData.country || 'es'
 
     const emailData = {
+      templateId: 1,
       name: userData.givenName.toUpperCase(),
       familyName: userData.familyName.toUpperCase(),
       email: userData.email,
