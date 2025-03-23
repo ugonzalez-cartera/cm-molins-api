@@ -6,6 +6,6 @@ export const CallSchema = new Schema({
   description: { type: String },
   date: { type: Date, required: true },
 },
-  {
+{
   id: false, // No additional id as virtual getter.
 })
