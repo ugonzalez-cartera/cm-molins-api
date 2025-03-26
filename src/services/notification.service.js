@@ -46,6 +46,7 @@ export async function sendCreateUserEmail ({ userData, emailData, token, baseUrl
     }
 
     const emailTemplate = {
+      templateId: 1,
       name: userData.givenName,
       familyName: userData.familyName,
       email: userData.email,
