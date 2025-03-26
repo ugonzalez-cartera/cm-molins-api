@@ -521,7 +521,7 @@ async function deleteCouncilYear (year) {
 // --------------------
 async function getAvailableCallCouncils () {
   try {
-    const availableCouncilCalls = await Councils.find({ date: { $gt: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
+    const availableCouncilCalls = await Councils.find({ date: { $gte: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
     return availableCouncilCalls
   } catch (err) {
     const error = new CustomError({
