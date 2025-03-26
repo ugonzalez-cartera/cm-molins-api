@@ -14,7 +14,7 @@ export async function getCouncils (req, reply) {
 
   try {
     if (coming) {
-      const comingCouncils = await Councils.findOne({ date: { $gt: dayjs().toISOString() } }).lean()
+      const comingCouncils = await Councils.findOne({ date: { $gte: dayjs().toISOString() } }).lean()
 
       return {
         docs: comingCouncils ? [comingCouncils] : [],
