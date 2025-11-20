@@ -146,7 +146,7 @@ async function createCouncilWithFiles (parts) {
     const error = new CustomError({
       title: err.title || `createCouncilWithFiles exception, ${err.message}`,
       detail: err.detail || `createCouncilWithFiles exception, ${err}`,
-      status: err.status || 500,
+      status: err.status || err.http_code || 500,
       code: err.code || '',
     })
     throw error
