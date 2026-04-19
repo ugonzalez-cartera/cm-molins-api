@@ -14,7 +14,7 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-const useMinIO = !!process.env.MINIO_ENDPOINT
+const useMinIO = !!(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY && process.env.MINIO_SECRET_KEY)
 
 const minioEndpoint = process.env.MINIO_ENDPOINT?.replace(/^https?:\/\//, '')
 
