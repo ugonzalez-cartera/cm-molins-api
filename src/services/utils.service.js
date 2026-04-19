@@ -4,6 +4,7 @@ import axios from 'axios'
 import streamifier from 'streamifier'
 import { v2 as cloudinary } from 'cloudinary'
 import { customAlphabet } from 'nanoid'
+import * as Minio from 'minio'
 
 import config from '../config.js'
 
@@ -12,6 +13,20 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
+
+const useMinIO = !!process.env.MINIO_ENDPOINT
+
+const minioClient = useMinIO
+  ? new Minio.Client({
+    endPoint: process.env.MINIO_ENDPOINT,
+    port: Number.parseInt(process.env.MINIO_PORT || '9000'),
+    useSSL: process.env.MINIO_USE_SSL !== 'false',
+    accessKey: process.env.MINIO_ACCESS_KEY,
+    secretKey: process.env.MINIO_SECRET_KEY,
+  })
+  : null
+
+const minioBucket = process.env.MINIO_BUCKET
 
 // Password generation consts and function (defined here as it will be used extensively).
 const numbers = '0123456789'
@@ -78,7 +93,43 @@ export function generateStrongPassword () {
 }
 
 // --------------------
+async function minioUploadFile (buffer, folder, fileName) {
+  const objectName = `${folder}/${fileName}`
+  await minioClient.putObject(minioBucket, objectName, buffer)
+  const protocol = process.env.MINIO_USE_SSL === 'false' ? 'http' : 'https'
+  const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
+  const secure_url = `${protocol}://${process.env.MINIO_ENDPOINT}${port}/${minioBucket}/${objectName}`
+  return { secure_url, public_id: objectName }
+}
+
+async function minioDeleteFile (objectName) {
+  await minioClient.removeObject(minioBucket, objectName)
+}
+
+async function minioDeleteResourcesByPrefix (prefix) {
+  const objectsList = await new Promise((resolve, reject) => {
+    const objects = []
+    const stream = minioClient.listObjects(minioBucket, prefix, true)
+    stream.on('data', (obj) => objects.push(obj.name))
+    stream.on('end', () => resolve(objects))
+    stream.on('error', reject)
+  })
+  if (objectsList.length > 0) {
+    await minioClient.removeObjects(minioBucket, objectsList)
+  }
+}
+
+// --------------------
 export async function uploadFile (buffer, folder, fileName) {
+  if (useMinIO) {
+    try {
+      return await minioUploadFile(buffer, folder, fileName)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
   try {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
@@ -104,11 +155,19 @@ export async function uploadFile (buffer, folder, fileName) {
 
 // --------------------
 export async function deleteFile (publicId) {
+  if (useMinIO) {
+    try {
+      return await minioDeleteFile(publicId)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
   try {
     const result = await cloudinary.uploader.destroy(publicId)
-
     return result
-  } catch ( err) {
+  } catch (err) {
     console.error(err)
     throw err
   }
@@ -116,6 +175,15 @@ export async function deleteFile (publicId) {
 
 // --------------------
 export async function deleteFolder (folder) {
+  if (useMinIO) {
+    try {
+      return await minioDeleteResourcesByPrefix(folder)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
   try {
     const result = await cloudinary.api.delete_folder(folder)
     return result
@@ -127,14 +195,28 @@ export async function deleteFolder (folder) {
 
 // --------------------
 export async function deleteResourcesByPrefix (prefix) {
+  if (useMinIO) {
+    try {
+      return await minioDeleteResourcesByPrefix(prefix)
+    } catch (err) {
+      console.error(err)
+      throw err
+    }
+  }
+
   try {
     const result = await cloudinary.api.delete_resources_by_prefix(prefix)
-
     return result
   } catch (err) {
     console.error(err)
     throw err
   }
+}
+
+// --------------------
+export async function getPresignedUrl (publicId, expirySeconds = 3600) {
+  if (!useMinIO) return null
+  return minioClient.presignedGetObject(minioBucket, publicId, expirySeconds)
 }
 
 // --------------------
