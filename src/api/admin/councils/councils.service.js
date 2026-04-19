@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 import { CustomError } from '../../../utils.js'
-import { uploadFile, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail } from '../../../services/utils.service.js'
+import { uploadFile, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail, getPresignedUrl } from '../../../services/utils.service.js'
 import { getCouncilCallTemplate } from '../../../services/data/mailing/templates/council-call.js'
 
 import dayjs from 'dayjs'
@@ -519,10 +519,26 @@ async function deleteCouncilYear (year) {
 }
 
 // --------------------
+async function _resolveFileUrl (file) {
+  if (!file?.publicId) return file
+  const presignedUrl = await getPresignedUrl(file.publicId)
+  return presignedUrl ? { ...file, secureUrl: presignedUrl } : file
+}
+
+async function _resolveCouncilUrls (council) {
+  if (!council) return council
+  const resolved = { ...council }
+  if (council.report?.file) resolved.report = { ...council.report, file: await _resolveFileUrl(council.report.file) }
+  if (council.agenda?.file) resolved.agenda = { ...council.agenda, file: await _resolveFileUrl(council.agenda.file) }
+  if (council.minutes?.file) resolved.minutes = { ...council.minutes, file: await _resolveFileUrl(council.minutes.file) }
+  if (council.docs?.length > 0) resolved.docs = await Promise.all(council.docs.map(_resolveFileUrl))
+  return resolved
+}
+
 async function getAvailableCallCouncils () {
   try {
     const availableCouncilCalls = await Councils.find({ date: { $gte: dayjs().tz('Europe/Paris').startOf('day').toISOString() } }).lean()
-    return availableCouncilCalls
+    return Promise.all(availableCouncilCalls.map(_resolveCouncilUrls))
   } catch (err) {
     const error = new CustomError({
       title: `getAvailableCallCouncils exception, ${err.message}`,

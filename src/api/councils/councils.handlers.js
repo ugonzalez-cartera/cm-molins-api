@@ -5,8 +5,25 @@ import mongoose from 'mongoose'
 import dayjs from 'dayjs'
 
 import { CustomError } from '../../utils.js'
+import { getPresignedUrl } from '../../services/utils.service.js'
 
 const Councils = mongoose.model('Council')
+
+async function _resolveFileUrl (file) {
+  if (!file?.publicId) return file
+  const presignedUrl = await getPresignedUrl(file.publicId)
+  return presignedUrl ? { ...file, secureUrl: presignedUrl } : file
+}
+
+async function _resolveCouncilUrls (council) {
+  if (!council) return council
+  const resolved = { ...council }
+  if (council.report?.file) resolved.report = { ...council.report, file: await _resolveFileUrl(council.report.file) }
+  if (council.agenda?.file) resolved.agenda = { ...council.agenda, file: await _resolveFileUrl(council.agenda.file) }
+  if (council.minutes?.file) resolved.minutes = { ...council.minutes, file: await _resolveFileUrl(council.minutes.file) }
+  if (council.docs?.length > 0) resolved.docs = await Promise.all(council.docs.map(_resolveFileUrl))
+  return resolved
+}
 
 // --------------------
 export async function getCouncils (req, reply) {
@@ -14,11 +31,12 @@ export async function getCouncils (req, reply) {
 
   try {
     if (coming) {
-      const comingCouncils = await Councils.findOne({ date: { $gte: dayjs().startOf('day').toISOString() } }).lean()
+      const comingCouncil = await Councils.findOne({ date: { $gte: dayjs().startOf('day').toISOString() } }).lean()
+      const resolved = await _resolveCouncilUrls(comingCouncil)
 
       return {
-        docs: comingCouncils ? [comingCouncils] : [],
-        docsCount: comingCouncils?.length ?? 0,
+        docs: resolved ? [resolved] : [],
+        docsCount: resolved ? 1 : 0,
       }
     } else {
       const result = await Councils.aggregate([
@@ -52,7 +70,7 @@ export async function getCouncilsByYear (req, reply) {
 
     const councils = await Councils.find({ year }).sort({ month: 1 }).lean()
 
-    return councils
+    return Promise.all(councils.map(_resolveCouncilUrls))
   } catch (err) {
     console.error(' !! Could not get council by year.', councilYear, err)
     reply.internalServerError(err)
@@ -68,7 +86,7 @@ export async function getCouncil (req, reply) {
 
     if (!council) return reply.notFound('Council not found.')
 
-    return council
+    return _resolveCouncilUrls(council)
   } catch (err) {
     console.error(' !! Could not get council.', err)
     reply.internalServerError(err)
