@@ -88,7 +88,6 @@ export function generateStrongPassword () {
   while (!config.strongPassword.test(password)) {
     password = newPassword()
   }
-
   return password
 }
 
