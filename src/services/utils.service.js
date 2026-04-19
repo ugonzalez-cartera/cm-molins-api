@@ -16,9 +16,11 @@ cloudinary.config({
 
 const useMinIO = !!process.env.MINIO_ENDPOINT
 
+const minioEndpoint = process.env.MINIO_ENDPOINT?.replace(/^https?:\/\//, '')
+
 const minioClient = useMinIO
   ? new Minio.Client({
-    endPoint: process.env.MINIO_ENDPOINT,
+    endPoint: minioEndpoint,
     port: Number.parseInt(process.env.MINIO_PORT || '9000'),
     useSSL: process.env.MINIO_USE_SSL !== 'false',
     accessKey: process.env.MINIO_ACCESS_KEY,
@@ -98,7 +100,7 @@ async function minioUploadFile (buffer, folder, fileName) {
   await minioClient.putObject(minioBucket, objectName, buffer)
   const protocol = process.env.MINIO_USE_SSL === 'false' ? 'http' : 'https'
   const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
-  const secure_url = `${protocol}://${process.env.MINIO_ENDPOINT}${port}/${minioBucket}/${objectName}`
+  const secure_url = `${protocol}://${minioEndpoint}${port}/${minioBucket}/${objectName}`
   return { secure_url, public_id: objectName }
 }
 
