@@ -2,7 +2,7 @@
 
 import mongoose from 'mongoose'
 
-import { uploadFile, deleteFile } from '../../services/utils.service.js'
+import { uploadFile, deleteFile, getPresignedUrl } from '../../services/utils.service.js'
 
 import { CustomError } from '../../utils.js'
 
@@ -10,6 +10,12 @@ const Investees = mongoose.model('Investee')
 const ChangeLogs = mongoose.model('ChangeLog')
 
 const currentEnv = process.env.NODE_ENV
+
+async function _resolveInvesteeUrl (investee) {
+  if (!investee?.publicId) return investee
+  const presignedUrl = await getPresignedUrl(investee.publicId)
+  return presignedUrl ? { ...investee, logoUrl: presignedUrl } : investee
+}
 
 // --------------------
 async function getInvestees ({ page, type, limit, sort, term }) {
@@ -36,7 +42,7 @@ async function getInvestees ({ page, type, limit, sort, term }) {
       Investees.countDocuments(filter),
     ])
 
-    return { docs, docCount }
+    return { docs: await Promise.all(docs.map(_resolveInvesteeUrl)), docCount }
   } catch (err) {
     const error = new CustomError({
       title: `getInvestees exception, ${err.message}`,
@@ -60,7 +66,7 @@ async function getInvesteeById (investeeId) {
       throw error
     }
 
-    return investee
+    return _resolveInvesteeUrl(investee)
   } catch (err) {
     const error = new CustomError({
       title: err.title || `getInvesteeById exception, ${err.message}`,
@@ -113,7 +119,7 @@ async function createInvestee (investeeData, investeeFile, userId) {
 
     await investee.save({ updatedBy: userId })
 
-    return investee
+    return _resolveInvesteeUrl(investee.toObject())
   } catch (err) {
     const error = new CustomError({
       title: err.detail || `createInvestee exception, ${err.message}`,
