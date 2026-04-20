@@ -25,6 +25,7 @@ const minioClient = useMinIO
     useSSL: process.env.MINIO_USE_SSL !== 'false',
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
+    region: process.env.MINIO_REGION || 'eu-west-2',
   })
   : null
 
@@ -218,7 +219,18 @@ export async function deleteResourcesByPrefix (prefix) {
 // --------------------
 export async function getPresignedUrl (publicId, expirySeconds = 3600) {
   if (!useMinIO) return null
-  return minioClient.presignedGetObject(minioBucket, publicId, expirySeconds)
+  try {
+    const timeout = new Promise((_, reject) =>
+      setTimeout(() => reject(new Error('MinIO presigned URL timed out')), 5000)
+    )
+    return await Promise.race([
+      minioClient.presignedGetObject(minioBucket, publicId, expirySeconds),
+      timeout,
+    ])
+  } catch (err) {
+    console.error('getPresignedUrl error:', err.message)
+    return null
+  }
 }
 
 // --------------------
