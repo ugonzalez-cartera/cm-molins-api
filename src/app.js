@@ -47,6 +47,7 @@ fastify
     origin: [
       'https://bo.carteracm.com',
       'https://carteracm.com',
+      'https://staging.bo.carteracm.com',
       /^https?:\/\/localhost(:\d+)?$/,
     ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
