@@ -4,7 +4,7 @@ logs/
 nodemon*
 nodemon.json
 uploads/
-.env
+.env*
 
 # Logs
 logs
