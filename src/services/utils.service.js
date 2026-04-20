@@ -25,15 +25,17 @@ if (_minioRawEndpoint) {
 
 const minioEndpoint = _minioUrl?.hostname
 const _minioPortFromUrl = _minioUrl?.port ? Number(_minioUrl.port) : null
-const _minioPort = Number.parseInt(process.env.MINIO_PORT || String(_minioPortFromUrl || '9000'))
-const _minioUseSSL = process.env.MINIO_USE_SSL !== undefined
-  ? process.env.MINIO_USE_SSL === 'true'
-  : _minioUrl?.protocol === 'https:'
+const _minioPort = process.env.MINIO_PORT
+  ? Number.parseInt(process.env.MINIO_PORT)
+  : (_minioPortFromUrl || undefined)
+const _minioUseSSL = process.env.MINIO_USE_SSL === undefined
+  ? _minioUrl?.protocol === 'https:'
+  : process.env.MINIO_USE_SSL === 'true'
 
 const minioClient = useMinIO
   ? new Minio.Client({
     endPoint: minioEndpoint,
-    port: _minioPort,
+    ...(_minioPort !== undefined && { port: _minioPort }),
     useSSL: _minioUseSSL,
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
@@ -61,7 +63,7 @@ export async function sendNotificationEmail (emailData) {
 
   const { email: emailTo, name: nameTo, familyName: familyNameTo, subject: emailSubject, ...params } = emailData
 
-  const subjectPrefix = process.env.NODE_ENV !== 'production' ? 'TEST - ' : ''
+  const subjectPrefix = process.env.NODE_ENV === 'production' ? '' : 'TEST - '
 
   try {
     const dataToSend = {
@@ -155,26 +157,21 @@ export async function uploadFile (buffer, folder, fileName) {
     }
   }
 
-  try {
-    return new Promise((resolve, reject) => {
-      const uploadStream = cloudinary.uploader.upload_stream(
-        {
-          folder,
-          upload_preset: 'ml_default',
-          public_id: fileName,
-          resource_type: 'auto',
-        },
-        (error, result) => {
-          if (result) resolve(result)
-          else reject(error)
-        },
-      )
-      streamifier.createReadStream(buffer).pipe(uploadStream)
-    })
-  } catch (err) {
-    console.error(err)
-    throw err
-  }
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder,
+        upload_preset: 'ml_default',
+        public_id: fileName,
+        resource_type: 'auto',
+      },
+      (error, result) => {
+        if (result) resolve(result)
+        else reject(new Error(error?.message || 'Cloudinary upload failed'))
+      },
+    )
+    streamifier.createReadStream(buffer).pipe(uploadStream)
+  })
 }
 
 // --------------------
