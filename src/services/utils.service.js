@@ -16,34 +16,19 @@ cloudinary.config({
 
 const useMinIO = !!(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY && process.env.MINIO_SECRET_KEY)
 
-const _minioRawEndpoint = process.env.MINIO_ENDPOINT
-let _minioUrl = null
-if (_minioRawEndpoint) {
-  const normalizedEndpoint = _minioRawEndpoint.startsWith('http') ? _minioRawEndpoint : `http://${_minioRawEndpoint}`
-  _minioUrl = new URL(normalizedEndpoint)
-}
-
-const minioEndpoint = _minioUrl?.hostname
-const _minioPortFromUrl = _minioUrl?.port ? Number(_minioUrl.port) : null
-const _minioPort = process.env.MINIO_PORT
-  ? Number.parseInt(process.env.MINIO_PORT)
-  : (_minioPortFromUrl || undefined)
-const _minioUseSSL = process.env.MINIO_USE_SSL === undefined
-  ? _minioUrl?.protocol === 'https:'
-  : process.env.MINIO_USE_SSL === 'true'
+const minioEndpoint = process.env.MINIO_ENDPOINT
+const minioUseSSL = process.env.MINIO_USE_SSL === 'true'
+const minioBucket = process.env.MINIO_BUCKET
 
 const minioClient = useMinIO
   ? new Minio.Client({
     endPoint: minioEndpoint,
-    ...(_minioPort !== undefined && { port: _minioPort }),
-    useSSL: _minioUseSSL,
+    useSSL: minioUseSSL,
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
     region: process.env.MINIO_REGION || 'eu-west-2',
   })
   : null
-
-const minioBucket = process.env.MINIO_BUCKET
 
 // Password generation consts and function (defined here as it will be used extensively).
 const numbers = '0123456789'
@@ -123,9 +108,8 @@ async function minioUploadFile (buffer, folder, fileName) {
   await minioEnsureBucket()
   const objectName = `${folder}/${fileName}`
   await minioClient.putObject(minioBucket, objectName, buffer, buffer.length)
-  const protocol = process.env.MINIO_USE_SSL === 'false' ? 'http' : 'https'
-  const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
-  const secure_url = `${protocol}://${minioEndpoint}${port}/${minioBucket}/${objectName}`
+  const protocol = minioUseSSL ? 'https' : 'http'
+  const secure_url = `${protocol}://${minioEndpoint}/${minioBucket}/${objectName}`
   return { secure_url, public_id: objectName }
 }
 
