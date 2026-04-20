@@ -101,10 +101,9 @@ async function createCouncilWithFiles (parts) {
 
       await _validateCouncilExists(year, month)
 
-      const buffer = await part.toBuffer()
       const dir = _getDirName(part.fieldname)
       const folder = _getFolderName(month, year, dir)
-      const uploadedFile = await uploadFile(buffer, folder, part.filename)
+      const uploadedFile = await uploadFile(part.file, folder, part.filename)
 
       if (part.fieldname === 'councilAdditionalDocs') {
         additionalDocs.push({
@@ -243,9 +242,8 @@ async function createCouncilDocs (councilId, parts, userId) {
         _validateCouncilPart(part.mimetype, filesToUpload > 3)
       }
 
-      const buffer = await part.toBuffer()
       const folder = _getFolderName(council.month, council.year, 'additional-docs')
-      const uploadedFile = await uploadFile(buffer, folder, part.filename)
+      const uploadedFile = await uploadFile(part.file, folder, part.filename)
 
       additionalDocs.push({
         secureUrl: uploadedFile.secure_url,
@@ -377,9 +375,8 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
     let uploadedFile
     if (file) {
       const councilFile = file.fields.councilFile
-      const buffer = await councilFile.toBuffer()
       const folder = _getFolderName(council.month, council.year, resource)
-      uploadedFile = await uploadFile(buffer, folder, councilFile.filename)
+      uploadedFile = await uploadFile(councilFile.file, folder, councilFile.filename)
       if (council[resource]?.publicId) {
         deleteFile(council[resource].publicId)
       }

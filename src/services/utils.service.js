@@ -96,9 +96,20 @@ export function generateStrongPassword () {
 }
 
 // --------------------
-async function minioUploadFile (buffer, folder, fileName) {
+async function minioEnsureBucket () {
+  const exists = await minioClient.bucketExists(minioBucket)
+  if (!exists) {
+    const region = process.env.MINIO_REGION || 'eu-west-2'
+    await minioClient.makeBucket(minioBucket, region)
+    console.info(`MinIO bucket "${minioBucket}" created in region "${region}"`)
+  }
+}
+
+async function minioUploadFile (streamOrBuffer, folder, fileName) {
+  await minioEnsureBucket()
   const objectName = `${folder}/${fileName}`
-  await minioClient.putObject(minioBucket, objectName, buffer)
+  const size = Buffer.isBuffer(streamOrBuffer) ? streamOrBuffer.length : -1
+  await minioClient.putObject(minioBucket, objectName, streamOrBuffer, size)
   const protocol = process.env.MINIO_USE_SSL === 'false' ? 'http' : 'https'
   const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
   const secure_url = `${protocol}://${minioEndpoint}${port}/${minioBucket}/${objectName}`
@@ -123,10 +134,10 @@ async function minioDeleteResourcesByPrefix (prefix) {
 }
 
 // --------------------
-export async function uploadFile (buffer, folder, fileName) {
+export async function uploadFile (streamOrBuffer, folder, fileName) {
   if (useMinIO) {
     try {
-      return await minioUploadFile(buffer, folder, fileName)
+      return await minioUploadFile(streamOrBuffer, folder, fileName)
     } catch (err) {
       console.error(err)
       throw err
@@ -148,7 +159,11 @@ export async function uploadFile (buffer, folder, fileName) {
         },
       )
 
-      streamifier.createReadStream(buffer).pipe(uploadStream)
+      if (Buffer.isBuffer(streamOrBuffer)) {
+        streamifier.createReadStream(streamOrBuffer).pipe(uploadStream)
+      } else {
+        streamOrBuffer.pipe(uploadStream)
+      }
     })
   } catch (err) {
     console.error(err)
