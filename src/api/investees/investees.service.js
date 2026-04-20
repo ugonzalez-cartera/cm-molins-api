@@ -101,8 +101,9 @@ async function createInvestee (investeeData, investeeFile, userId) {
       throw error
     }
 
+    const buffer = await investeeFile.toBuffer()
     const folder = `${currentEnv}-carteracm/investees`
-    const uploadImageResult = await uploadFile(investeeFile.file, folder, investeeFile.filename)
+    const uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
 
     const investee = new Investees({
       name,
@@ -146,8 +147,9 @@ async function updateInvesteeImage (investeeId, userId, file) {
     if (file) {
       const investeeFile = file.fields.investeeFile
 
+      const buffer = await investeeFile.toBuffer()
       const folder = `${currentEnv}-carteracm/investees`
-      uploadImageResult = await uploadFile(file.fields.investeeFile.file, folder, investeeFile.filename)
+      uploadImageResult = await uploadFile(buffer, folder, investeeFile.filename)
     }
 
     if (uploadImageResult) {

@@ -43,7 +43,16 @@ if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'staging')
 export const fastify = Fastify(fastifyOptions)
 
 fastify
-  .register(fastifyCors, {})
+  .register(fastifyCors, {
+    origin: [
+      'https://bo.carteracm.com',
+      'https://carteracm.com',
+      /^https?:\/\/localhost(:\d+)?$/,
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  })
   .register(fastifyHelmet)
   .register(fastifySensible)
   .register(fastifyMultipart, {

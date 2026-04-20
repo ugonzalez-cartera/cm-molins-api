@@ -105,11 +105,10 @@ async function minioEnsureBucket () {
   }
 }
 
-async function minioUploadFile (streamOrBuffer, folder, fileName) {
+async function minioUploadFile (buffer, folder, fileName) {
   await minioEnsureBucket()
   const objectName = `${folder}/${fileName}`
-  const size = Buffer.isBuffer(streamOrBuffer) ? streamOrBuffer.length : -1
-  await minioClient.putObject(minioBucket, objectName, streamOrBuffer, size)
+  await minioClient.putObject(minioBucket, objectName, buffer, buffer.length)
   const protocol = process.env.MINIO_USE_SSL === 'false' ? 'http' : 'https'
   const port = process.env.MINIO_PORT ? `:${process.env.MINIO_PORT}` : ''
   const secure_url = `${protocol}://${minioEndpoint}${port}/${minioBucket}/${objectName}`
@@ -134,10 +133,10 @@ async function minioDeleteResourcesByPrefix (prefix) {
 }
 
 // --------------------
-export async function uploadFile (streamOrBuffer, folder, fileName) {
+export async function uploadFile (buffer, folder, fileName) {
   if (useMinIO) {
     try {
-      return await minioUploadFile(streamOrBuffer, folder, fileName)
+      return await minioUploadFile(buffer, folder, fileName)
     } catch (err) {
       console.error(err)
       throw err
@@ -158,12 +157,7 @@ export async function uploadFile (streamOrBuffer, folder, fileName) {
           else reject(error)
         },
       )
-
-      if (Buffer.isBuffer(streamOrBuffer)) {
-        streamifier.createReadStream(streamOrBuffer).pipe(uploadStream)
-      } else {
-        streamOrBuffer.pipe(uploadStream)
-      }
+      streamifier.createReadStream(buffer).pipe(uploadStream)
     })
   } catch (err) {
     console.error(err)
