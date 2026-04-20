@@ -125,7 +125,6 @@ async function minioDeleteResourcesByPrefix (prefix) {
 export async function uploadFile (buffer, folder, fileName) {
   if (useMinIO) {
     try {
-      console.info(useMinIO, 'use minio')
       return await minioUploadFile(buffer, folder, fileName)
     } catch (err) {
       console.error(err)
