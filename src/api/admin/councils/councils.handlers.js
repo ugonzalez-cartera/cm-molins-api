@@ -9,8 +9,6 @@ async function createCouncil (req, reply) {
   try {
     if (req.isMultipart()) {
       const parts = req.files()
-      const useMinIO = !!(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY && process.env.MINIO_SECRET_KEY)
-      console.info('Creating council with files. Using MinIO:', useMinIO)
       newCouncil = await councilsService.createCouncilWithFiles(parts)
     } else {
       const { date, agenda } = req.body || {}

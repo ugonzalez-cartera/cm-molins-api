@@ -16,13 +16,25 @@ cloudinary.config({
 
 const useMinIO = !!(process.env.MINIO_ENDPOINT && process.env.MINIO_ACCESS_KEY && process.env.MINIO_SECRET_KEY)
 
-const minioEndpoint = process.env.MINIO_ENDPOINT?.replace(/^https?:\/\//, '')
+const _minioRawEndpoint = process.env.MINIO_ENDPOINT
+let _minioUrl = null
+if (_minioRawEndpoint) {
+  const normalizedEndpoint = _minioRawEndpoint.startsWith('http') ? _minioRawEndpoint : `http://${_minioRawEndpoint}`
+  _minioUrl = new URL(normalizedEndpoint)
+}
+
+const minioEndpoint = _minioUrl?.hostname
+const _minioPortFromUrl = _minioUrl?.port ? Number(_minioUrl.port) : null
+const _minioPort = Number.parseInt(process.env.MINIO_PORT || String(_minioPortFromUrl || '9000'))
+const _minioUseSSL = process.env.MINIO_USE_SSL !== undefined
+  ? process.env.MINIO_USE_SSL === 'true'
+  : _minioUrl?.protocol === 'https:'
 
 const minioClient = useMinIO
   ? new Minio.Client({
     endPoint: minioEndpoint,
-    port: Number.parseInt(process.env.MINIO_PORT || '9000'),
-    useSSL: process.env.MINIO_USE_SSL !== 'false',
+    port: _minioPort,
+    useSSL: _minioUseSSL,
     accessKey: process.env.MINIO_ACCESS_KEY,
     secretKey: process.env.MINIO_SECRET_KEY,
     region: process.env.MINIO_REGION || 'eu-west-2',
