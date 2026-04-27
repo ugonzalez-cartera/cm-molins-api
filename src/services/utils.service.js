@@ -5,6 +5,7 @@ import streamifier from 'streamifier'
 import { v2 as cloudinary } from 'cloudinary'
 import { customAlphabet } from 'nanoid'
 import * as Minio from 'minio'
+import { PDFDocument } from 'pdf-lib'
 
 import config from '../config.js'
 
@@ -104,10 +105,15 @@ async function minioEnsureBucket () {
   }
 }
 
-async function minioUploadFile (buffer, folder, fileName) {
+async function minioUploadFile (streamOrBuffer, folder, fileName) {
   await minioEnsureBucket()
   const objectName = `${folder}/${fileName}`
-  await minioClient.putObject(minioBucket, objectName, buffer, buffer.length)
+  const isBuffer = Buffer.isBuffer(streamOrBuffer)
+  if (isBuffer) {
+    await minioClient.putObject(minioBucket, objectName, streamOrBuffer, streamOrBuffer.length)
+  } else {
+    await minioClient.putObject(minioBucket, objectName, streamOrBuffer)
+  }
   const protocol = minioUseSSL ? 'https' : 'http'
   const secure_url = `${protocol}://${minioEndpoint}/${minioBucket}/${objectName}`
   return { secure_url, public_id: objectName }
@@ -131,16 +137,28 @@ async function minioDeleteResourcesByPrefix (prefix) {
 }
 
 // --------------------
-export async function uploadFile (buffer, folder, fileName) {
+export async function optimizePDF (buffer) {
+  try {
+    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true })
+    const optimized = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false, updateFieldAppearances: false })
+    return Buffer.from(optimized)
+  } catch {
+    return buffer
+  }
+}
+
+// --------------------
+export async function uploadFile (streamOrBuffer, folder, fileName) {
   if (useMinIO) {
     try {
-      return await minioUploadFile(buffer, folder, fileName)
+      return await minioUploadFile(streamOrBuffer, folder, fileName)
     } catch (err) {
       console.error(err)
       throw err
     }
   }
 
+  const buffer = streamOrBuffer
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {
