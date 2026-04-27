@@ -5,7 +5,6 @@ import streamifier from 'streamifier'
 import { v2 as cloudinary } from 'cloudinary'
 import { customAlphabet } from 'nanoid'
 import * as Minio from 'minio'
-import { PDFDocument } from 'pdf-lib'
 
 import config from '../config.js'
 
@@ -133,17 +132,6 @@ async function minioDeleteResourcesByPrefix (prefix) {
   })
   if (objectsList.length > 0) {
     await minioClient.removeObjects(minioBucket, objectsList)
-  }
-}
-
-// --------------------
-export async function optimizePDF (buffer) {
-  try {
-    const pdfDoc = await PDFDocument.load(buffer, { ignoreEncryption: true })
-    const optimized = await pdfDoc.save({ useObjectStreams: true, addDefaultPage: false, updateFieldAppearances: false })
-    return Buffer.from(optimized)
-  } catch {
-    return buffer
   }
 }
 

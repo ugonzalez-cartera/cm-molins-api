@@ -1,7 +1,7 @@
 import mongoose from 'mongoose'
 
 import { CustomError } from '../../../utils.js'
-import { uploadFile, optimizePDF, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail, getPresignedUrl } from '../../../services/utils.service.js'
+import { uploadFile, deleteFile, deleteFolder, deleteResourcesByPrefix, sendNotificationEmail, getPresignedUrl } from '../../../services/utils.service.js'
 import { getCouncilCallTemplate } from '../../../services/data/mailing/templates/council-call.js'
 
 import dayjs from 'dayjs'
@@ -101,11 +101,9 @@ async function createCouncilWithFiles (parts) {
 
       await _validateCouncilExists(year, month)
 
-      const buffer = await part.toBuffer()
-      const optimizedBuffer = await optimizePDF(buffer)
       const dir = _getDirName(part.fieldname)
       const folder = _getFolderName(month, year, dir)
-      const uploadedFile = await uploadFile(optimizedBuffer, folder, part.filename)
+      const uploadedFile = await uploadFile(part.file, folder, part.filename)
 
       if (part.fieldname === 'councilAdditionalDocs') {
         additionalDocs.push({
@@ -244,10 +242,8 @@ async function createCouncilDocs (councilId, parts, userId) {
         _validateCouncilPart(part.mimetype, filesToUpload > 3)
       }
 
-      const buffer = await part.toBuffer()
-      const optimizedBuffer = await optimizePDF(buffer)
       const folder = _getFolderName(council.month, council.year, 'additional-docs')
-      const uploadedFile = await uploadFile(optimizedBuffer, folder, part.filename)
+      const uploadedFile = await uploadFile(part.file, folder, part.filename)
 
       additionalDocs.push({
         secureUrl: uploadedFile.secure_url,
@@ -379,10 +375,8 @@ async function updateCouncilFileResource ({ councilId, resource, file, userId })
     let uploadedFile
     if (file) {
       const councilFile = file.fields.councilFile
-      const buffer = await councilFile.toBuffer()
-      const optimizedBuffer = await optimizePDF(buffer)
       const folder = _getFolderName(council.month, council.year, resource)
-      uploadedFile = await uploadFile(optimizedBuffer, folder, councilFile.filename)
+      uploadedFile = await uploadFile(councilFile.file, folder, councilFile.filename)
       if (council[resource]?.publicId) {
         deleteFile(council[resource].publicId)
       }
